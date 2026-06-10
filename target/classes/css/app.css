@@ -1,0 +1,113 @@
+.root {
+    -fx-background-color: #1d1f24;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 13px;
+}
+
+.label {
+    -fx-text-fill: #d8dbe2;
+}
+
+.title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #39ff14;
+    -fx-font-family: "Consolas", monospace;
+}
+
+.subtitle {
+    -fx-text-fill: #9aa0ab;
+}
+
+.hint {
+    -fx-text-fill: #6f7681;
+    -fx-font-size: 11px;
+    -fx-font-family: "Consolas", monospace;
+}
+
+.error {
+    -fx-text-fill: #ff5470;
+    -fx-font-weight: bold;
+}
+
+.text-field, .combo-box {
+    -fx-background-color: #2a2d34;
+    -fx-text-fill: #e8eaee;
+    -fx-prompt-text-fill: #6f7681;
+    -fx-background-radius: 4;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #e8eaee;
+    -fx-background-color: transparent;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #2a2d34;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #3a3f49;
+}
+
+.button {
+    -fx-background-color: #2a2d34;
+    -fx-text-fill: #e8eaee;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #3a3f49;
+}
+
+.button.primary {
+    -fx-background-color: #1f7a33;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+    -fx-padding: 8 16 8 16;
+}
+
+.button.primary:hover {
+    -fx-background-color: #27993f;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #111;
+    -fx-background-radius: 3;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: linear-gradient(to right, #1f7a33, #39ff14);
+    -fx-background-radius: 3;
+}
+
+.percent {
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 16px;
+    -fx-text-fill: #39ff14;
+}
+
+.log-panel {
+    -fx-background-color: black;
+    -fx-padding: 8;
+    -fx-background-radius: 4;
+}
+
+.monitor {
+    -fx-text-fill: #39ff14;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 12px;
+}
+
+.terminal {
+    -fx-control-inner-background: black;
+    -fx-text-fill: #39ff14;
+    -fx-highlight-fill: #1f7a33;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 11px;
+}
+
+.terminal .content {
+    -fx-background-color: black;
+}
