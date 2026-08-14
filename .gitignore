@@ -1,0 +1,20 @@
+# --- Build ---
+target/
+dependency-reduced-pom.xml
+
+# --- Packaging output: NON versionare gli installer ---
+# jpackage scrive in dist/ (vedi STANDARD.md); *.msi/*.exe restano per gli installer
+# delle versioni vecchie ancora sciolti in radice.
+dist/
+*.msi
+*.exe
+*.rar
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+.claude/
+
+# --- Log ---
+*.log

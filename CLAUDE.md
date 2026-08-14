@@ -1,3 +1,9 @@
+# CLAUDE.md — rinominaPDF
+
+**Prima leggi `STANDARD.md`**: toolchain, versionamento, nomenclatura degli artefatti, metodo di
+packaging (fat-jar + jpackage, con la JVM dentro: l'utente finale non installa ne' Java ne' JavaFX)
+e convenzioni JavaFX valgono per tutta la cartella e non si ripetono qui.
+
 #workspace e dont-touch rule
 
 	- usa C:\Users\tsousasilva\Desktop\projects\sorter-fx\2.0.4 solo come riferimento ###non fare modifiche su questa cartella### mi riferirà a questa cartella come sorter-fx
@@ -51,4 +57,3 @@
 	- su sorter-fx ci sono le instruzioni di come usare wsl per ricavare barcode, usa lo stesso metodo
 	- su sorter-fx ci sta una gestione delle risorce del computer per controllo multi-thread, usa lo stesso metodo 
 	- su sorter-fx ci sta il log, inspirati su quello ma fai a modo tuo
-	- su queryF5 ci sono le instruzioni di come usare jpackage per creare il file msi, exe, usa lo stesso metodo (è inportante che l'uttente non deva instalare ne java ne java-fx)
