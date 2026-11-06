@@ -11,9 +11,12 @@ $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
 # ─── Identita' del prodotto ──────────────────────────────────────────────────────────────────
-# ATTENZIONE alla prossima pubblicazione: la 1.0.0 e' gia' distribuita, quindi il pacchetto
-# successivo dev'essere almeno 1.0.1 o non aggiornera' chi ce l'ha gia'.
-$version     = "1.0.0"
+# 1.0.1: la prima con il controllo aggiornamenti dentro l'app (core/update). Chi ha la 1.0.0
+# non ce l'ha, quindi questa la installa a mano; dalla successiva arriva da sola.
+# 1.0.2: accetta tutte le famiglie di barcode di SorterNext (12 cifre, ABW/ACW, 17 cifre/ARG),
+# non solo 2 lettere + 10 cifre.
+# 1.0.3: la finestra a cinque zone dello standard, con storico e registro.
+$version     = "1.0.3"
 $name        = "rinominaPDF"
 $vendor      = "teo.place"
 $mainClass   = "app.Launcher"

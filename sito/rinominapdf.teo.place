@@ -1,0 +1,62 @@
+# ============================================================
+#  rinominapdf.teo.place - sito prodotto di rinominaPDF
+#
+#  Pagina statica minima: nome, descrizione e il bottone di download,
+#  che legge /scarica/versione.json (lo stesso manifest che usano
+#  teoSetup e l'app). Nessun backend, nessuna porta occupata, nessuna
+#  riga in `prodotti` sul database authenticator: rinominaPDF e' un
+#  programma di lavoro, non si vende e non ha piani.
+#
+#     /var/www/html/rinominapdf/dist/        -> root di questo vhost
+#     /var/www/scarica/rinominapdf/          -> installer .msi/.exe + versione.json
+#
+#  Certificato: quello condiviso di teo.place (zona Cloudflare in SSL
+#  "Full", vedi snippets/ssl-teo-place.conf).
+#
+#  Il record DNS su Cloudflare esiste dal 2026-10-30. Fino a quel giorno il vhost
+#  serviva solo /scarica/ e la radice rimandava a teo.place; da quando rinominaPDF
+#  e' rientrato nel wizard serve anche il sito (sorgenti in sito/ del repo).
+# ============================================================
+
+server {
+    listen 80;
+    server_name rinominapdf.teo.place;
+
+    include snippets/acme-challenge.conf;
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name rinominapdf.teo.place;
+
+    include snippets/ssl-teo-place.conf;
+
+    root /var/www/html/rinominapdf/dist;
+    index index.html;
+    include snippets/no-cache-index.conf;
+
+    # Solo .exe/.msi/.json, e il set di caratteri esclude la barra: dalla cartella non si esce.
+    location ~ ^/scarica/([A-Za-z0-9._-]+\.(?:exe|msi|json))$ {
+        alias /var/www/scarica/rinominapdf/$1;
+        add_header Cache-Control "public, max-age=300";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~ /\.                                      { return 404; }
+    location ~* \.(sql|bak|old|sqlite|zip|tar|gz|tgz)$  { return 404; }
+
+    error_page 404 = @custom_404;
+    location @custom_404 {
+        internal;
+        default_type text/plain;
+        return 404 "Not found: $uri
+";
+    }
+}

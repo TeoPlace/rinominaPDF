@@ -1,188 +1,113 @@
 package app.ui;
 
-import app.core.Globals;
-import app.core.JobParams;
-import app.core.LogQueue;
-import app.core.Pc;
+import app.core.Elaborazione;
 import app.core.RenameJob;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
 
 /**
- * Vista di elaborazione: progress bar 0-100, animazione retro, pulsante per
- * aprire/chiudere il log-panel con risorse (CPU/disco/memoria) e stato dei
- * thread. Una Timeline da 300ms svuota la coda di log e aggiorna i sensori
- * (stesso schema del flusher di sorter-fx).
+ * Il centro durante l'elaborazione: animazione retro, avanzamento e cosa ha in mano ogni lavoratore.
+ * Le righe e le risorse stanno nel registro. La aggiorna il flusher di {@link Shell}.
  */
-public class ProcessPane {
+public final class ProcessPane {
 
-    private final MainWindow window;
-    private final JobParams params;
+    private static final int LAVORATORI_A_VISTA = 8;
+
+    private final AppSession session;
     private final VBox root = new VBox(14);
-
     private final ProgressBar progressBar = new ProgressBar(0);
     private final Label progressLabel = new Label("In preparazione…");
     private final Label percentLabel = new Label("0%");
-    private final RetroAnimation animation = new RetroAnimation();
-
-    private final VBox logPanel = new VBox(6);
-    private final Label resourceLabel = new Label();
     private final Label threadsLabel = new Label();
-    private final TextArea terminal = new TextArea();
+    private final RetroAnimation animation = new RetroAnimation();
+    private boolean interruzione;
 
-    private final Button toggleLogButton = new Button("Mostra log ▼");
-    private final Button abortButton = new Button("Interrompi");
-    private final Button backButton = new Button("◀ Nuova elaborazione");
-
-    private RenameJob job;
-    private Timeline flusher;
-    private int total;
-    private int logged;
-
-    public ProcessPane(MainWindow window, JobParams params) {
-        this.window = window;
-        this.params = params;
+    public ProcessPane(AppSession session, Elaborazione e) {
+        this.session = session;
 
         Label title = new Label("Elaborazione in corso");
-        title.getStyleClass().add("title");
+        title.getStyleClass().add("rp-view-title");
+        Label dettaglio = new Label(e.esito() + "  ·  istat " + e.istat() + "  ·  " + e.anno() + "  ·  " + e.pacco());
+        dettaglio.getStyleClass().add("rp-muted");
 
         progressBar.setMaxWidth(Double.MAX_VALUE);
-        progressBar.setPrefHeight(26);
-        percentLabel.getStyleClass().add("percent");
+        percentLabel.getStyleClass().add("rp-percent");
         HBox progressRow = new HBox(10, progressBar, percentLabel);
         progressRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(progressBar, Priority.ALWAYS);
 
-        terminal.setEditable(false);
-        terminal.getStyleClass().add("terminal");
-        terminal.setPrefRowCount(10);
-        resourceLabel.getStyleClass().add("monitor");
-        threadsLabel.getStyleClass().add("monitor");
+        threadsLabel.getStyleClass().add("rp-mono");
         threadsLabel.setWrapText(true);
-        logPanel.getChildren().addAll(resourceLabel, threadsLabel, terminal);
-        logPanel.getStyleClass().add("log-panel");
-        logPanel.setVisible(false);
-        logPanel.setManaged(false);
-        VBox.setVgrow(logPanel, Priority.ALWAYS);
-        VBox.setVgrow(terminal, Priority.ALWAYS);
 
-        toggleLogButton.setOnAction(e -> toggleLog());
-        abortButton.setOnAction(e -> {
-            if (job != null) {
-                job.abort();
-                abortButton.setDisable(true);
-                progressLabel.setText("Interruzione in corso…");
-            }
+        Button abortButton = new Button("Interrompi");
+        abortButton.getStyleClass().add("rp-danger-button");
+        abortButton.setOnAction(ev -> {
+            session.interrompi();
+            abortButton.setDisable(true);
+            interruzione = true;
         });
-        backButton.setVisible(false);
-        backButton.setManaged(false);
-        backButton.setOnAction(e -> window.showSetup());
-        HBox buttons = new HBox(10, toggleLogButton, abortButton, backButton);
-        buttons.setAlignment(Pos.CENTER);
 
         root.setPadding(new Insets(24));
-        root.getStyleClass().add("process");
-        root.getChildren().addAll(title, animation.getCanvas(), progressRow,
-                progressLabel, buttons, logPanel);
-        root.setAlignment(Pos.TOP_CENTER);
+        root.getChildren().addAll(title, dettaglio, spazioAnimazione(), progressRow, progressLabel,
+                abortButton, threadsLabel);
     }
 
-    public void start() {
-        animation.start();
-        setupFlusher();
-        job = new RenameJob(params, new RenameJob.Listener() {
-            @Override
-            public void onTotal(int totalFiles) {
-                total = totalFiles;
-                Platform.runLater(() -> progressLabel.setText("0 / " + totalFiles + " file"));
-            }
-
-            @Override
-            public void onProgress(int done, int totalFiles) {
-                Platform.runLater(() -> {
-                    progressBar.setProgress((double) done / totalFiles);
-                    percentLabel.setText(Math.round(100.0 * done / totalFiles) + "%");
-                    progressLabel.setText(done + " / " + totalFiles + " file");
-                });
-            }
-
-            @Override
-            public void onFinished(int ok, int unread, int errors, boolean aborted) {
-                Platform.runLater(() -> finish(ok, unread, errors, aborted));
-            }
+    /** La tela e' larga 640: dove il centro e' piu' stretto si rimpicciolisce invece di sbordare. */
+    private Pane spazioAnimazione() {
+        Canvas canvas = animation.getCanvas();
+        Pane box = new Pane(canvas);
+        box.setMinWidth(0);
+        box.setPrefHeight(canvas.getHeight());
+        box.setMinHeight(canvas.getHeight());
+        box.widthProperty().addListener((o, was, w) -> {
+            double s = Math.min(1, w.doubleValue() / canvas.getWidth());
+            canvas.setScaleX(s);
+            canvas.setScaleY(s);
+            canvas.setLayoutX((w.doubleValue() - canvas.getWidth()) / 2);
         });
-        job.start();
+        return box;
     }
 
-    private void finish(int ok, int unread, int errors, boolean aborted) {
+    /** Anche per riprendere: l'animazione gira solo finche' la vista e' a schermo. */
+    public void avviaAnimazione() {
         animation.stop();
-        flushLogs();
-        if (total > 0 && !aborted) {
-            progressBar.setProgress(1);
-            percentLabel.setText("100%");
+        animation.start();
+    }
+
+    public void fermaAnimazione() {
+        animation.stop();
+    }
+
+    public void aggiorna() {
+        int t = session.totale();
+        int d = session.fatti();
+        if (t > 0) {
+            progressBar.setProgress((double) d / t);
+            percentLabel.setText(Math.round(100.0 * d / t) + "%");
+            progressLabel.setText(d + " / " + t + " file" + (interruzione ? "  ·  interruzione in corso…" : ""));
         }
-        progressLabel.setText((aborted ? "Interrotto. " : "Completato. ")
-                + "Rinominati: " + ok + "   Non letti: " + unread + "   Errori: " + errors);
-        abortButton.setVisible(false);
-        abortButton.setManaged(false);
-        backButton.setVisible(true);
-        backButton.setManaged(true);
+        threadsLabel.setText(lavoratoriAVista());
     }
 
-    private void toggleLog() {
-        boolean show = !logPanel.isVisible();
-        logPanel.setVisible(show);
-        logPanel.setManaged(show);
-        toggleLogButton.setText(show ? "Nascondi log ▲" : "Mostra log ▼");
-    }
-
-    /** Flusher a 300ms: log -> terminale, sensori -> etichette (come sorter-fx). */
-    private void setupFlusher() {
-        flusher = new Timeline(new KeyFrame(Duration.millis(300), e -> {
-            flushLogs();
-            Pc.cpu();
-            Pc.disk();
-            Pc.memory();
-            resourceLabel.setText(String.format(
-                    "CPU %.0f%%   Disco %.0f%%   RAM %.0f%% (%.0f/%.0f MB)   JVM %.0f MB   Thread attivi: %d (target %d)",
-                    Pc.get("cpu"), Pc.get("disk"), Pc.get("memory"),
-                    Pc.get("memoryUsedMb"), Pc.get("memoryTotalMb"), Pc.get("jvmUsedMb"),
-                    RenameJob.threadStatus.size(), Globals.totalThreads));
-            if (RenameJob.threadStatus.isEmpty()) {
-                threadsLabel.setText("Nessun thread di lavoro attivo");
-            } else {
-                StringBuilder sb = new StringBuilder("Thread: ");
-                RenameJob.threadStatus.forEach((name, file) ->
-                        sb.append(name).append(" → ").append(file).append("   "));
-                threadsLabel.setText(sb.toString());
-            }
-        }));
-        flusher.setCycleCount(Animation.INDEFINITE);
-        flusher.play();
-    }
-
-    private void flushLogs() {
-        for (String line : LogQueue.drain()) {
-            logged++;
-            if (logged > 10_000) {
-                terminal.clear();
-                logged = 0;
-            }
-            terminal.appendText(line + "\n");
-        }
+    private static String lavoratoriAVista() {
+        List<String> righe = new ArrayList<>();
+        new TreeMap<>(RenameJob.threadStatus).forEach((nome, file) -> righe.add(nome + " → " + file));
+        if (righe.size() <= LAVORATORI_A_VISTA) return String.join("\n", righe);
+        return String.join("\n", righe.subList(0, LAVORATORI_A_VISTA))
+                + "\n… e altri " + (righe.size() - LAVORATORI_A_VISTA);
     }
 
     public Parent getRoot() {

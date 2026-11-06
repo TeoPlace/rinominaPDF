@@ -1,113 +1,189 @@
+/* rinominaPDF: sopra il tema AtlantaFX (PrimerDark, fisso). Le classi di contorno vengono da
+   listBigStorage, riferimento della linea; l'accento e' il verde del prodotto. */
 .root {
-    -fx-background-color: #1d1f24;
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 13px;
+    -color-accent-fg: #4ade5c;
+    -color-accent-emphasis: #1f7a33;
+    -color-accent-muted: #2a6b3a;
+    -color-accent-subtle: #14301c;
+
+    -rp-green: #3fb950;
+    -rp-amber: #d29922;
+    -rp-red: #f85149;
+    -rp-blue: #58a6ff;
 }
 
-.label {
-    -fx-text-fill: #d8dbe2;
-}
+.rp-icon { -fx-fill: -color-fg-default; }
 
-.title {
-    -fx-font-size: 26px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #39ff14;
-    -fx-font-family: "Consolas", monospace;
+/* ---- Finestra e barra del titolo ---- */
+.rp-window {
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1;
 }
-
-.subtitle {
-    -fx-text-fill: #9aa0ab;
+.rp-titlebar {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 0 0 1 0;
 }
-
-.hint {
-    -fx-text-fill: #6f7681;
-    -fx-font-size: 11px;
-    -fx-font-family: "Consolas", monospace;
-}
-
-.error {
-    -fx-text-fill: #ff5470;
+.rp-title-text {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-size: 12;
     -fx-font-weight: bold;
 }
-
-.text-field, .combo-box {
-    -fx-background-color: #2a2d34;
-    -fx-text-fill: #e8eaee;
-    -fx-prompt-text-fill: #6f7681;
-    -fx-background-radius: 4;
-}
-
-.combo-box .list-cell {
-    -fx-text-fill: #e8eaee;
+.rp-win-button {
     -fx-background-color: transparent;
-}
-
-.combo-box-popup .list-view {
-    -fx-background-color: #2a2d34;
-}
-
-.combo-box-popup .list-cell:hover {
-    -fx-background-color: #3a3f49;
-}
-
-.button {
-    -fx-background-color: #2a2d34;
-    -fx-text-fill: #e8eaee;
-    -fx-background-radius: 4;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-padding: 10 16;
     -fx-cursor: hand;
 }
+.rp-win-button .rp-icon { -fx-fill: -color-fg-muted; }
+.rp-win-button:hover { -fx-background-color: derive(-color-bg-subtle, 8%); }
+.rp-win-button:hover .rp-icon { -fx-fill: -color-fg-default; }
+/* Il rosso solo al passaggio: e' l'unico dei tre che fa perdere quello che si sta facendo. */
+.rp-win-button.close:hover { -fx-background-color: -rp-red; }
+.rp-win-button.close:hover .rp-icon { -fx-fill: white; }
 
-.button:hover {
-    -fx-background-color: #3a3f49;
-}
-
-.button.primary {
-    -fx-background-color: #1f7a33;
+.rp-dialog-header {
     -fx-font-weight: bold;
-    -fx-font-size: 15px;
-    -fx-padding: 8 16 8 16;
+    -fx-font-size: 13;
+    -fx-padding: 14 16 2 16;
 }
 
-.button.primary:hover {
-    -fx-background-color: #27993f;
+/* ---- Barra di sinistra ---- */
+.rp-sidebar {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 0 1 0 0;
 }
-
-.progress-bar > .track {
-    -fx-background-color: #111;
-    -fx-background-radius: 3;
+.rp-sidebar-sep {
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1 0 0 0;
 }
-
-.progress-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #1f7a33, #39ff14);
-    -fx-background-radius: 3;
+.rp-sidebar-empty {
+    -fx-text-fill: -color-fg-muted;
+    -fx-font-size: 11;
+    -fx-padding: 10 12;
+    -fx-wrap-text: true;
 }
-
-.percent {
-    -fx-font-family: "Consolas", monospace;
-    -fx-font-size: 16px;
-    -fx-text-fill: #39ff14;
+.rp-nav-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-width: 0;
+    -fx-padding: 10 12;
+    -fx-cursor: hand;
+    -fx-content-display: left;
+    -fx-graphic-text-gap: 12;
+    -fx-alignment: center-left;
+    -fx-text-fill: -color-fg-muted;
 }
+.rp-nav-button .rp-icon { -fx-fill: -color-fg-muted; }
+.rp-nav-button:hover { -fx-background-color: derive(-color-bg-subtle, 8%); -fx-text-fill: -color-fg-default; }
+.rp-nav-button:hover .rp-icon { -fx-fill: -color-fg-default; }
+.rp-nav-button.selected { -fx-background-color: derive(-color-bg-subtle, 16%); -fx-text-fill: -color-fg-default; }
+.rp-nav-button.selected .rp-icon { -fx-fill: -color-fg-default; }
 
-.log-panel {
-    -fx-background-color: black;
-    -fx-padding: 8;
+.rp-run-entry { -fx-padding: 7 10; }
+.rp-run-alias { -fx-text-fill: -color-fg-default; -fx-font-size: 12.5; -fx-font-weight: bold; }
+.rp-run-meta  { -fx-text-fill: -color-fg-muted; -fx-font-size: 10.5; }
+.rp-run-dot {
+    -fx-min-width: 8; -fx-min-height: 8; -fx-max-width: 8; -fx-max-height: 8;
+    -fx-background-radius: 8;
+}
+.rp-run-dot.done       { -fx-background-color: -rp-green; }
+.rp-run-dot.warn       { -fx-background-color: -rp-amber; }
+.rp-run-dot.error      { -fx-background-color: -rp-red; }
+.rp-run-dot.inprogress { -fx-background-color: -rp-blue; }
+.rp-run-dot.empty      { -fx-background-color: -color-fg-muted; }
+
+.rp-scroll, .rp-scroll > .viewport { -fx-background-color: transparent; }
+.rp-scroll { -fx-background-insets: 0; -fx-padding: 0; -fx-border-width: 0; }
+
+/* ---- Registro ---- */
+.rp-registro {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 0 0 0 1;
+}
+.rp-section-title { -fx-font-weight: bold; -fx-font-size: 13; }
+.rp-gauge-label { -fx-font-size: 11; -fx-text-fill: -color-fg-muted; }
+.rp-gauge-value { -fx-font-size: 11; }
+.rp-gauge-track {
+    -fx-background-color: -color-bg-inset;
     -fx-background-radius: 4;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
 }
+.rp-gauge-fill { -fx-background-radius: 3; -fx-background-color: -color-accent-emphasis; }
+.rp-gauge-fill.warn { -fx-background-color: -rp-amber; }
+.rp-gauge-fill.crit { -fx-background-color: -rp-red; }
+.rp-log-area {
+    -fx-font-family: "Consolas", "Cascadia Mono", monospace;
+    -fx-font-size: 11;
+}
+.rp-icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-border-width: 0;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+}
+.rp-icon-button:hover { -fx-background-color: -color-bg-inset; }
+.rp-collapsed-bar > .menu-button > .arrow-button { -fx-padding: 0; -fx-min-width: 0; -fx-max-width: 0; }
+.rp-collapsed-bar > .menu-button > .arrow-button > .arrow { -fx-padding: 0; -fx-background-color: transparent; }
 
-.monitor {
-    -fx-text-fill: #39ff14;
-    -fx-font-family: "Consolas", monospace;
-    -fx-font-size: 12px;
+.rp-kpi-card {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1;
+    -fx-padding: 6 10;
 }
+.rp-kpi-value { -fx-font-size: 18; -fx-font-weight: bold; }
+.rp-kpi-value.ok   { -fx-text-fill: -rp-green; }
+.rp-kpi-value.warn { -fx-text-fill: -rp-amber; }
+.rp-kpi-value.crit { -fx-text-fill: -rp-red; }
 
-.terminal {
-    -fx-control-inner-background: black;
-    -fx-text-fill: #39ff14;
-    -fx-highlight-fill: #1f7a33;
-    -fx-font-family: "Consolas", monospace;
-    -fx-font-size: 11px;
+/* ---- Centro ---- */
+.rp-view-title { -fx-font-size: 19; -fx-font-weight: bold; }
+.rp-muted { -fx-text-fill: -color-fg-muted; }
+.rp-error-label { -fx-text-fill: -rp-red; -fx-font-size: 12; }
+.rp-hint {
+    -fx-text-fill: -color-fg-muted;
+    -fx-font-size: 11;
+    -fx-font-family: "Consolas", "Cascadia Mono", monospace;
 }
+.rp-mono {
+    -fx-text-fill: -color-fg-muted;
+    -fx-font-size: 11;
+    -fx-font-family: "Consolas", "Cascadia Mono", monospace;
+}
+.rp-percent {
+    -fx-font-family: "Consolas", "Cascadia Mono", monospace;
+    -fx-font-size: 15;
+    -fx-text-fill: -color-accent-fg;
+}
+.rp-accent-button {
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-border-width: 0;
+    -fx-padding: 8 16;
+}
+.rp-accent-button .rp-icon { -fx-fill: white; }
+.rp-accent-button:hover { -fx-background-color: derive(-color-accent-emphasis, 15%); }
+.rp-accent-button:disabled { -fx-opacity: 0.5; }
+.rp-danger-button { -fx-text-fill: -rp-red; }
+.rp-danger-button .rp-icon { -fx-fill: -rp-red; }
 
-.terminal .content {
-    -fx-background-color: black;
+/* ---- Piede ---- */
+.rp-footer {
+    -fx-padding: 5 12;
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1 0 0 0;
+    -fx-font-size: 11;
 }
+.rp-footer-muted { -fx-text-fill: -color-fg-muted; -fx-font-size: 11; }

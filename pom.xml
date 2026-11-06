@@ -9,7 +9,7 @@
     <artifactId>rinominapdf</artifactId>
     <!-- Tre campi crescenti, niente -SNAPSHOT (vedi STANDARD.md). Allineata a AppInfo.VERSION e a
          build-msi.ps1: lo verifica VersionTest. -->
-    <version>1.0.0</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
     <name>rinominaPDF</name>
     <description>Rinomina PDF tramite barcode letti con WSL/Scandit</description>
@@ -19,6 +19,7 @@
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>22.0.2</javafx.version>
+        <jackson.version>2.17.1</jackson.version>
         <junit.version>5.10.2</junit.version>
 
         <!-- Riferita sia dal plugin JavaFX sia dal manifest dello shade: scritta due volte a mano,
@@ -32,6 +33,13 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Il tema della finestra (vedi STANDARD.md, "UI JavaFX") -->
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>2.0.1</version>
         </dependency>
 
         <!-- PDF: rendering pagine a immagine -->
@@ -58,6 +66,13 @@
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
             <version>3.5.3</version>
+        </dependency>
+
+        <!-- versione.json del controllo aggiornamenti (core/update, vedi STANDARD.md) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- Test -->

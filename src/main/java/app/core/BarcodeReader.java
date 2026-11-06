@@ -46,7 +46,14 @@ public final class BarcodeReader {
     }
 
     private static final Pattern VALUE_PATTERN = Pattern.compile("\"value\":\"(.+?)\"");
-    private static final Pattern INNER_CODE = Pattern.compile("[A-Z]{2}\\d{10}");
+    /**
+     * Codici cercati come sottostringa del testo di un 2D, che puo' contenere dati aggiuntivi.
+     * Solo le famiglie con lettere: un 12 o 17 cifre preso a meta' di una sequenza di cifre
+     * piu' lunga sarebbe un codice inventato.
+     */
+    private static final List<Pattern> INNER_CODES = List.of(
+            Pattern.compile("[A-Z]{2}\\d{10}"),
+            Pattern.compile("A[BC]W\\d{8}(?!\\d)"));
     private static final int WSL_TIMEOUT_SECONDS = 60;
 
     private static volatile Boolean wslAvailable;
@@ -234,12 +241,12 @@ public final class BarcodeReader {
                         String text = decodeDataMatrix(scale == 1 ? sub : upscale(sub, scale));
                         if (text != null) {
                             String cleaned = clean(text);
-                            if (Globals.BARCODE_PATTERN.matcher(cleaned).matches()) {
+                            if (isRight(cleaned)) {
                                 return cleaned;
                             }
-                            Matcher m = INNER_CODE.matcher(cleaned);
-                            if (m.find()) {
-                                return m.group();
+                            String inner = innerCode(cleaned);
+                            if (inner != null) {
+                                return inner;
                             }
                         }
                     }
@@ -296,17 +303,39 @@ public final class BarcodeReader {
     /**
      * Seleziona il barcode giusto nell'ordine in cui sono stati trovati
      * (pagina 1 prima di pagina 2, DataMatrix prima dei lineari): prima un
-     * match esatto del pattern raccomandata (2 lettere + 10 cifre), poi la
-     * ricerca come sottostringa (i 2D possono contenere dati aggiuntivi).
+     * match esatto di una delle {@link Globals#BARCODE_FAMILIES}, famiglia per
+     * famiglia nell'ordine di preferenza, poi la ricerca come sottostringa
+     * (i 2D possono contenere dati aggiuntivi).
      */
     public static String selectRight(List<String> barcodes) {
-        for (String b : barcodes) {
-            if (Globals.BARCODE_PATTERN.matcher(b).matches()) {
-                return b;
+        for (Pattern family : Globals.BARCODE_FAMILIES) {
+            for (String b : barcodes) {
+                if (family.matcher(b).matches()) {
+                    return b;
+                }
             }
         }
         for (String b : barcodes) {
-            Matcher m = INNER_CODE.matcher(b);
+            String inner = innerCode(b);
+            if (inner != null) {
+                return inner;
+            }
+        }
+        return null;
+    }
+
+    static boolean isRight(String barcode) {
+        for (Pattern family : Globals.BARCODE_FAMILIES) {
+            if (family.matcher(barcode).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String innerCode(String barcode) {
+        for (Pattern p : INNER_CODES) {
+            Matcher m = p.matcher(barcode);
             if (m.find()) {
                 return m.group();
             }

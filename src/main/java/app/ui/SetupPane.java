@@ -3,11 +3,12 @@ package app.ui;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
+import app.core.Elaborazione;
 import app.core.Globals;
 import app.core.JobParams;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -21,12 +22,13 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 
 /**
- * Form iniziale: Input, Output, Esito, Istat, Anno, Pacco.
- * Validazione inline; "Avvia" si abilita solo quando tutto è valido.
+ * "Nuova elaborazione": Input, Output, Esito, Istat, Anno, Pacco. Validazione alla pressione di
+ * "Avvia". Resta la stessa istanza per tutta la sessione, cosi' cambiare vista non cancella cio'
+ * che e' stato scritto.
  */
 public class SetupPane {
 
-    private final VBox root = new VBox(18);
+    private final VBox root = new VBox(14);
     private final TextField inputField = new TextField();
     private final TextField outputField = new TextField();
     private final ComboBox<String> esitoCombo = new ComboBox<>();
@@ -34,13 +36,14 @@ public class SetupPane {
     private final TextField annoField = new TextField();
     private final TextField paccoField = new TextField();
     private final Label errorLabel = new Label();
-    private final Button startButton = new Button("Avvia ▶");
+    private final Label occupatoLabel = new Label("C'è già un'elaborazione in corso: se ne può avviare un'altra quando finisce.");
+    private final Button startButton = new Button("Avvia");
 
-    public SetupPane(MainWindow window) {
-        Label title = new Label("rinominaPDF");
-        title.getStyleClass().add("title");
+    public SetupPane(Consumer<JobParams> avvia) {
+        Label title = new Label("Nuova elaborazione");
+        title.getStyleClass().add("rp-view-title");
         Label subtitle = new Label("Rinomina i PDF leggendo il barcode al loro interno");
-        subtitle.getStyleClass().add("subtitle");
+        subtitle.getStyleClass().add("rp-muted");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -66,26 +69,46 @@ public class SetupPane {
         grid.addRow(4, new Label("Anno"), annoField);
         grid.addRow(5, new Label("Pacco"), paccoField);
 
-        errorLabel.getStyleClass().add("error");
+        errorLabel.getStyleClass().add("rp-error-label");
         errorLabel.setWrapText(true);
+        occupatoLabel.getStyleClass().add("rp-muted");
+        occupatoLabel.setWrapText(true);
+        setOccupato(false);
 
-        startButton.getStyleClass().add("primary");
+        startButton.setGraphic(Icons.of("play", 16));
+        startButton.getStyleClass().add("rp-accent-button");
         startButton.setMaxWidth(Double.MAX_VALUE);
         startButton.setOnAction(e -> {
             JobParams params = validate();
             if (params != null) {
-                window.startJob(params);
+                avvia.accept(params);
             }
         });
 
         Label example = new Label("Esempio risultato: RB0002858945-sorter-COMPIUTAGIACENZA-000063064-2026-66555P310.pdf");
-        example.getStyleClass().add("hint");
+        example.getStyleClass().add("rp-hint");
         example.setWrapText(true);
 
-        root.setPadding(new Insets(28));
-        root.setAlignment(Pos.TOP_CENTER);
-        root.getStyleClass().add("setup");
-        root.getChildren().addAll(title, subtitle, grid, example, errorLabel, startButton);
+        root.setPadding(new Insets(24));
+        root.getChildren().addAll(new VBox(2, title, subtitle), grid, example, errorLabel, occupatoLabel, startButton);
+    }
+
+    /** Un job alla volta: mentre ce n'e' uno il form si compila, ma non parte. */
+    public void setOccupato(boolean occupato) {
+        startButton.setDisable(occupato);
+        occupatoLabel.setVisible(occupato);
+        occupatoLabel.setManaged(occupato);
+    }
+
+    /** "Riusa questi dati" dal riepilogo di un'elaborazione passata. */
+    public void riempi(Elaborazione e) {
+        inputField.setText(e.input());
+        outputField.setText(e.output());
+        esitoCombo.setValue(e.esito());
+        istatField.setText(e.istat());
+        annoField.setText(e.anno());
+        paccoField.setText(e.pacco());
+        errorLabel.setText("");
     }
 
     private HBox withBrowse(TextField field, String chooserTitle) {

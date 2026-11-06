@@ -33,10 +33,24 @@ public final class Globals {
     public static final int ISTAT_LENGTH = 9;
 
     /**
-     * Barcode "giusto": codice raccomandata/atto giudiziario italiano,
-     * 2 lettere + 10 cifre (es. RB0002858945, AC0002382099).
+     * Barcode "giusto": le famiglie di codici di una busta riconosciute da SorterNext
+     * ({@code BarcodeEquivalence} in sorter-next), in ordine di preferenza.
+     * <ul>
+     *   <li>2 lettere + 10 cifre: RB0002858945, AC0002382099</li>
+     *   <li>12 cifre che iniziano per 2, 3, 6 o 7: 286524542334</li>
+     *   <li>ABW / ACW + 8 cifre: ABW12345678</li>
+     *   <li>17 cifre, anche precedute da ARG: ARG12345678901234567</li>
+     * </ul>
+     * Fino alla 1.0.1 c'era solo la prima: le altre venivano lette e poi scartate, e il PDF
+     * finiva fra i non letti. L'ordine conta quando su una pagina ci sono codici di piu'
+     * famiglie: le 2 lettere + 10 cifre restano prime, cosi' i PDF che si rinominavano gia'
+     * prendono ancora lo stesso nome.
      */
-    public static final Pattern BARCODE_PATTERN = Pattern.compile("^[A-Z]{2}\\d{10}$");
+    public static final List<Pattern> BARCODE_FAMILIES = List.of(
+            Pattern.compile("^[A-Z]{2}\\d{10}$"),
+            Pattern.compile("^[2367]\\d{11}$"),
+            Pattern.compile("^A[BC]W\\d{8}$"),
+            Pattern.compile("^(?:ARG)?\\d{17}$"));
 
     // --- WSL / Scandit (stesso metodo di sorter-fx) ---
     public static final String SCANDIT_DIR = "/srv/scandit_multiple/";

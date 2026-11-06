@@ -30,7 +30,7 @@ public final class RenameJob {
         void onFinished(int ok, int unread, int errors, boolean aborted);
     }
 
-    /** Stato corrente di ogni thread di lavoro, mostrato nel log-panel. */
+    /** Stato corrente di ogni thread di lavoro, mostrato nella vista di elaborazione. */
     public static final ConcurrentHashMap<String, String> threadStatus = new ConcurrentHashMap<>();
 
     private final JobParams params;
@@ -53,6 +53,18 @@ public final class RenameJob {
 
     public void abort() {
         aborted = true;
+    }
+
+    public int rinominati() {
+        return okCount.get();
+    }
+
+    public int nonLetti() {
+        return unreadCount.get();
+    }
+
+    public int errori() {
+        return errorCount.get();
     }
 
     /** Avvia il lavoro su un thread dedicato (non blocca il chiamante). */
@@ -81,8 +93,7 @@ public final class RenameJob {
             listener.onTotal(total);
             LogQueue.add("job", "trovati " + total + " PDF in " + params.input());
             if (total == 0) {
-                listener.onFinished(0, 0, 0, false);
-                return;
+                return; // onFinished parte comunque dal finally, una volta sola
             }
 
             useWsl = BarcodeReader.isWslAvailable();
@@ -105,16 +116,19 @@ public final class RenameJob {
                 t.join();
             }
         } catch (Exception e) {
-            LogQueue.add("job", "errore fatale: " + e.getMessage());
+            // Conta come errore: senza, una cartella di output non scrivibile finirebbe nello
+            // storico come un'elaborazione riuscita con zero file.
+            errorCount.incrementAndGet();
+            LogQueue.add("errore", "errore fatale: " + e.getMessage());
             if (logs != null) {
                 logs.error("JOB", e);
             }
         } finally {
             cleanTempDir();
             threadStatus.clear();
-            listener.onFinished(okCount.get(), unreadCount.get(), errorCount.get(), aborted);
             LogQueue.add("job", "fine: ok=" + okCount + " nonLetti=" + unreadCount
                     + " errori=" + errorCount + (aborted ? " (interrotto)" : ""));
+            listener.onFinished(okCount.get(), unreadCount.get(), errorCount.get(), aborted);
         }
     }
 
