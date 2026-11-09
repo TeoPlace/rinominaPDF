@@ -21,7 +21,7 @@ lavora.
 | **watchCLI** | monitor di comandi CLI remoti via SSH, tab staccabili e timer | attivo |
 | **queryF5** | client multi-query MySQL | attivo |
 | **SorterNext** | lavorazione dei file del sorter (versione nativa di sorter-fx 2.0.4): PDF, elenchi, errori guidati; **.NET/WPF, non Java** | attivo — repo `sorter-next`, pacchetto da `sorter-installer` |
-| **SorterBarcode** | lettore di barcode nativo da riga di comando, usato da SorterNext | attivo — repo `sorter-barcode`, pacchetto da `sorter-installer` |
+| **SorterBarcode** | lettore di barcode nativo (riga di comando e DLL usate da SorterNext) con una finestra WPF a cinque zone e storico delle letture | attivo — repo `sorter-barcode`, pacchetto da `sorter-installer` |
 | **PicPurg** | trova le foto duplicate e quasi identiche in una cartella; si sceglie quali tenere, le altre vanno in una cartella, nel Cestino o via | attivo — nato e pubblicato il 2026-08-21 |
 | **watchHost** | monitor stile Zabbix di RAM/CPU/dischi di server Linux via SSH, dashboard **web** e alert email/WhatsApp; **senza JavaFX** | attivo — nato e pubblicato il 2026-10-30 |
 | **rinominaPDF** | rinomina i PDF di una cartella leggendone il barcode (esito, istat, anno, pacco scelti dall'utente) | attivo — rientrato nel wizard il 2026-10-30, **gratuito come SorterNext** |
@@ -80,7 +80,13 @@ desktop" e le voci "Licenza" della lista di controllo **non valgono**; tutto il 
 
    - **`git push` e basta.** Il remote **non si chiama `origin` dappertutto**: e' `main` in queryF5
      e in TraceFox, `origin` in listBigStorage e watchCLI. E il branch non e' sempre `main`:
-     queryF5 sta su **`1.1`**. `git push origin main` fallisce in tre casi su quattro, mentre
+     queryF5 sta su **`1.1`**.
+
+     > **queryF5: corretto il 2026-11-09.** Il remote di queryF5 si chiama `origin`
+     > (`TeoPlace/queryF5`), non `main`: `main` e' un *branch* fermo a "fixed jpackage". E un
+     > clone che non fa `git fetch` da settembre crede che `1.1` sia la 1.2.0 con AES ed
+     > Java 21, mentre su GitHub `origin/1.1` e' la 1.2.12 allineata: **prima di lavorare si
+     > guarda `git ls-remote`**, non il riferimento remoto locale. `git push origin main` fallisce in tre casi su quattro, mentre
      `git push` segue l'upstream gia' configurato, che e' quello giusto in tutti e quattro.
    - **Si pubblica solo cio' che compila e passa i test.** `mvn package` fa girare anche
      `VersionTest`, quindi una versione disallineata ferma il build prima: se il build non e'
@@ -766,6 +772,64 @@ Aggiungerlo a un progetto nuovo vuol dire: `HOME_URL` in `AppInfo`, le classi co
 chiamata in fondo all'avvio, e `jackson-databind` nel pom se non c'e' gia' (dove manca anche slf4j
 si usa `System.Logger` del JDK, senza aggiungere logback per due righe di diagnostica).
 
+## L'accesso per Claude (MCP)
+
+**Dal 2026-11-09 watchHost, listBigStorage, queryF5 e SorterBarcode si lasciano pilotare da
+Claude** (Claude Code, Claude Desktop) attraverso un server MCP dentro il programma installato.
+Non e' un programma a parte: e' il programma aperto, con la sua sessione, che risponde. Le
+regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutte.
+
+| prodotto | trasporto | indirizzo |
+|---|---|---|
+| watchHost | HTTP, nello stesso server della dashboard | `http://127.0.0.1:8470/mcp` |
+| listBigStorage | HTTP | `http://127.0.0.1:8471/mcp` |
+| queryF5 | HTTP | `http://127.0.0.1:8472/mcp` |
+| SorterBarcode | **stdio**: `SorterBarcode.exe --mcp` | — |
+
+- **HTTP per chi ha uno stato, stdio per chi non ce l'ha.** Un programma con una finestra aperta
+  va raggiunto *dov'e'*: un server stdio lo farebbe lanciare una seconda volta da Claude, con una
+  sessione vuota. SorterBarcode invece e' un lettore senza stato, e lanciarlo per ogni
+  conversazione non costa niente: niente porta e niente token. `--mcp` esce prima che parta WPF,
+  e su stdout esce **solo** JSON-RPC (il resto va su stderr, o la conversazione si rompe).
+- **Porta fissa per prodotto**, la prossima libera e' **8473**. Porta occupata: lo si scrive nel
+  log e in Impostazioni, il programma non si ferma.
+- **Spento per default**, acceso solo da un gesto dell'utente in Impostazioni. Acceso a caldo
+  apre la porta, spento la chiude (watchHost: risponde 404).
+- **Tre controlli, tutti e tre**: indirizzo e header `Host` di loopback (DNS rebinding), `Origin`
+  assente o di loopback, `Authorization: Bearer <token>` confrontato a tempo costante. Il token
+  sono 32 byte casuali **nel `CredentialStore` sotto `mcp-token`**, mai in chiaro su disco; la
+  pagina Impostazioni mostra il comando `claude mcp add` gia' completo, con Copia e "Rigenera
+  token" (il vecchio smette subito di valere).
+- **Nessun segreto passa dall'MCP**, in nessuna direzione: si sceglie un server o un profilo per
+  alias, e la password resta dov'e'. Nessun tool crea connessioni, ne' accetta una chiave host
+  nuova: quella la guarda una persona.
+- **Niente di distruttivo.** Nessun tool cancella file, run, server, soglie o archivio, ne'
+  installa aggiornamenti (chiuderebbe il programma). In listBigStorage resta valida la house rule
+  1: l'unica scrittura sul server e' la cancellazione su gesto dell'utente, e l'MCP non la espone.
+- **SQL scritto da un modello e' sola lettura TECNICA, non promessa** (queryF5): profilo
+  abilitato a mano uno per uno (nessuno di default), connessione dedicata, filtro lessicale
+  (una sola istruzione, solo SELECT/SHOW/DESCRIBE/EXPLAIN, niente `INTO OUTFILE`, `LOAD_FILE`,
+  `SLEEP`, `/*! */`…), `readOnly` propagato al server, transazione `READ ONLY` chiusa con
+  `ROLLBACK`, limiti di righe e di tempo. Servono tutti: una transazione READ ONLY da sola **non**
+  ferma `INTO OUTFILE`, e un utente `root` ha il privilegio FILE.
+- **Si vede cosa ha fatto Claude**: ogni chiamata finisce nel registro a schermo (categoria
+  "Claude") o, dove il registro non c'e', in un file nella cartella di controllo e in una lista
+  nelle Impostazioni. Un programma che cambia stato senza che si capisca chi e' stato si legge
+  come un guasto.
+- **Il protocollo e' scritto a mano** (Jackson nei Java, System.Text.Json in .NET): `initialize`,
+  `ping`, `tools/list`, `tools/call`, notifiche con 202, nessun SSE. Il dispatcher e' una classe
+  pura, testata senza rete; il trasporto e' a parte.
+- **Trappola Java, `Unable to establish loopback connection`**: `HttpServer` apre un socket
+  AF_UNIX in `%TEMP%`, e con un TEMP dal percorso anomalo (succede nelle sandbox di sviluppo) non
+  parte. Il ripiego e' **solo su fallimento** e usa `jdk.net.unixdomain.tmpdir` =
+  `%LOCALAPPDATA%\<Nome>\sock`, mai la home dell'utente. **Impostare la proprieta' dopo il
+  fallimento non basta**: il JDK la legge una volta per processo, al primo Selector (in queryF5
+  e' quello della licenza, prima dell'MCP). Per questo il fallimento lascia un segnaposto
+  `sock\ripiego-af-unix.txt`, e il `Launcher` — come prima istruzione — imposta la proprieta' se
+  lo trova (un `-D` esplicito vince): vale dall'avvio successivo. Cancellare il segnaposto torna
+  al comportamento normale. Agli utenti normali non succede: e' stato visto solo con
+  `%TEMP%`/`%LOCALAPPDATA%` reindirizzati nella sandbox di sviluppo.
+
 ## Il licensing nelle app desktop
 
 **Le app desktop sono a pagamento, e dal 2026-08-16 lo verificano.** Prima non era vero: TraceFox
@@ -1024,6 +1088,11 @@ la lista e' scritta. Un progetto nuovo e' finito quando ha **tutte** queste voci
 
 - [ ] Pacchetto `update` copiato da listBigStorage, controllo all'avvio e ogni sei ore, pulsante
       «Controlla aggiornamenti» (vedi "Il controllo aggiornamenti dentro l'app").
+
+**Accesso per Claude** (facoltativo, ma se c'e' segue "L'accesso per Claude (MCP)"):
+
+- [ ] Porta propria (la prossima libera) o stdio, interruttore spento di default, token nel
+      `CredentialStore`, nessun tool distruttivo, ogni chiamata visibile nel registro.
 
 **Licenza** — e' la voce che si rimanda e non va rimandata, perche' senza si finisce a vendere un
 programma identico alla sua copia gratuita:
