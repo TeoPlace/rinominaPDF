@@ -20,8 +20,8 @@ lavora.
 | **listBigStorage** | inventario di filesystem remoti via SSH e del PC locale, in SQLite | attivo — riferimento di UI/stack JavaFX |
 | **watchCLI** | monitor di comandi CLI remoti via SSH, tab staccabili e timer | attivo |
 | **queryF5** | client multi-query MySQL | attivo |
-| **SorterNext** | lavorazione dei file del sorter (versione nativa di sorter-fx 2.0.4): PDF, elenchi, errori guidati; **.NET/WPF, non Java** | attivo — repo `sorter-next`, pacchetto da `sorter-installer` |
-| **SorterBarcode** | lettore di barcode nativo (riga di comando e DLL usate da SorterNext) con una finestra WPF a cinque zone e storico delle letture | attivo — repo `sorter-barcode`, pacchetto da `sorter-installer` |
+| **SorterNext** | lavorazione dei file del sorter (versione nativa di sorter-fx 2.0.4): PDF, elenchi, errori guidati; **.NET/WPF, non Java** | attivo — repo `sorter-next`, con il suo `build-msi.ps1` (WiX), `sito\` e `server\` |
+| **SorterBarcode** | lettore di barcode nativo (riga di comando e DLL usate da SorterNext) con una finestra WPF a cinque zone e storico delle letture | attivo — repo `sorter-barcode` (in `..\sorter-barcode`, fuori da questa cartella), con il suo `build-msi.ps1` (WiX), `sito\` e `server\` |
 | **PicPurg** | trova le foto duplicate e quasi identiche in una cartella; si sceglie quali tenere, le altre vanno in una cartella, nel Cestino o via | attivo — nato e pubblicato il 2026-08-21 |
 | **watchHost** | monitor stile Zabbix di RAM/CPU/dischi di server Linux via SSH, dashboard **web** e alert email/WhatsApp; **senza JavaFX** | attivo — nato e pubblicato il 2026-10-30 |
 | **rinominaPDF** | rinomina i PDF di una cartella leggendone il barcode (esito, istat, anno, pacco scelti dall'utente) | attivo — rientrato nel wizard il 2026-10-30, **gratuito come SorterNext** |
@@ -1117,8 +1117,8 @@ ripetono**: stanno qui.
 ## Riallineare le copie
 
 Dopo ogni modifica a questo file, in ogni repo della cartella che ha uno `STANDARD.md` (oggi
-TraceFox, listBigStorage, watchCLI, queryF5, rinominaPDF, teoSetup, watchHost; fuori cartella
-`..\sorter-next` e `..\sorter-barcode`, se ce l'hanno):
+TraceFox, listBigStorage, watchCLI, queryF5, rinominaPDF, teoSetup, watchHost, sorter-next; fuori
+cartella `..\sorter-barcode`, che il ciclo qui sotto non vede e va scritto a parte):
 
 ```powershell
 $testa = "# STANDARD.md — standard comune dei progetti teo.place`r`n`r`n> **Copia.** La fonte e' ``CLAUDE.md`` nella cartella ``teo.place`` che contiene i repo, e chi la`r`n> modifica riallinea tutte le copie. Qui e' duplicata perche' da un clone singolo quella`r`n> cartella non esiste.`r`n"
@@ -1126,6 +1126,7 @@ $corpo = (Get-Content CLAUDE.md -Raw -Encoding UTF8) -replace '(?s)^# CLAUDE\.md
 foreach ($r in Get-ChildItem -Directory | Where-Object { Test-Path "$($_.FullName)\STANDARD.md" }) {
   [IO.File]::WriteAllText("$($r.FullName)\STANDARD.md", $testa + "`r`n" + $corpo, (New-Object Text.UTF8Encoding $false))
 }
+[IO.File]::WriteAllText((Resolve-Path ..\sorter-barcode).Path + "\STANDARD.md", $testa + "`r`n" + $corpo, (New-Object Text.UTF8Encoding $false))
 ```
 
 Poi, in teoSetup, `mvn test`: `CatalogoTest` rilegge la tabella "Identita' dei prodotti" dalla
