@@ -791,6 +791,23 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   sessione vuota. SorterBarcode invece e' un lettore senza stato, e lanciarlo per ogni
   conversazione non costa niente: niente porta e niente token. `--mcp` esce prima che parta WPF,
   e su stdout esce **solo** JSON-RPC (il resto va su stderr, o la conversazione si rompe).
+- **Anche i programmi HTTP hanno `--mcp`, ma e' un PONTE, non un secondo server** (dal
+  2026-11-10: watchHost 1.0.13, listBigStorage 1.0.19, queryF5 1.2.14). Il `Launcher`, come prima
+  istruzione, passa a `McpStdio` (stessa classe nei tre, cambia solo il package): legge il token
+  dal `CredentialStore` **senza generarlo**, inoltra ogni riga di stdin con un POST a
+  `127.0.0.1:<porta>/mcp` (`HttpURLConnection`: niente Selector, niente trappola AF_UNIX) e
+  rimanda la risposta su una riga. Se la porta e' chiusa **apre il programma una volta sola** e
+  aspetta 25 s; se una finestra e' gia' aperta non ne apre un'altra. **Non accende l'accesso**:
+  spento resta un errore che dice dove accenderlo. Esiste perche' il plugin di Claude e' un
+  repository pubblico e non puo' portare il token: cosi' il token non finisce in `~/.claude.json`,
+  e chi installa il plugin non deve sapere che il programma va aperto prima.
+- **Il plugin `teo-place`** (marketplace `TeoPlace/claude-plugins`, cartella `claude-plugins\`
+  qui accanto) dichiara i quattro server con il percorso in `Program Files` e porta una skill
+  che dice a Claude cosa fare quando uno non risponde. Un prodotto nuovo con l'MCP vi aggiunge
+  una riga in `.mcp.json` e una nella tabella della skill. In ogni programma, Impostazioni →
+  «Accesso per Claude» ha il link a `<HOME_URL>claude` (`AppInfo.CLAUDE_URL`), la pagina del sito
+  che spiega l'installazione; il comando `claude mcp add` da copiare resta, con `-s user`, per
+  chi non usa il plugin.
 - **Porta fissa per prodotto**, la prossima libera e' **8473**. Porta occupata: lo si scrive nel
   log e in Impostazioni, il programma non si ferma.
 - **Spento per default**, acceso solo da un gesto dell'utente in Impostazioni. Acceso a caldo
