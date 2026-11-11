@@ -808,6 +808,20 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   «Accesso per Claude» ha il link a `<HOME_URL>claude` (`AppInfo.CLAUDE_URL`), la pagina del sito
   che spiega l'installazione; il comando `claude mcp add` da copiare resta, con `-s user`, per
   chi non usa il plugin.
+- **«Collega a Claude», la strada per i clienti** (dal 2026-11-11: watchHost 1.0.14,
+  listBigStorage 1.0.20, queryF5 1.2.15). Il marketplace serve a chi usa Claude Code; chi usa
+  Claude Desktop non lo vede, e un cliente non deve aprire un terminale. Il pulsante, accanto
+  all'interruttore, usa `ClaudeLink` (stessa classe nei tre, cambia solo il package):
+  - scrive `{"command": "<exe installato>", "args": ["--mcp"]}` sotto `mcpServers.<codice>` in
+    **ogni** `claude_desktop_config.json` che trova: quello di `%APPDATA%\Claude` e quello
+    dell'installazione dallo Store (`%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude`).
+    Lascia il resto del file com'e', fa un backup `.bak-<codice>` accanto, e un file che non e'
+    un oggetto JSON **non lo tocca**: riscriverlo cancellerebbe gli altri server.
+  - se trova la CLI `claude`, toglie la registrazione utente con lo stesso nome (la vecchia HTTP
+    col token) e aggiunge quella stdio; con il plugin `teo-place` installato non la aggiunge, o i
+    server sarebbero due.
+  - **nessun token** finisce in una configurazione: lo legge il ponte. Solo dal programma
+    installato (`jpackage.app-path`): in sviluppo non c'e' un eseguibile da registrare.
 - **Porta fissa per prodotto**, la prossima libera e' **8473**. Porta occupata: lo si scrive nel
   log e in Impostazioni, il programma non si ferma.
 - **Spento per default**, acceso solo da un gesto dell'utente in Impostazioni. Acceso a caldo
