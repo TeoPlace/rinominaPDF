@@ -816,7 +816,13 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   argomenti, quindi il ponte tiene il lock di avvio (`ponte-mcp\avvio.lock`) finche' il programma
   non compare fra i processi, e il programma che deve saperlo lo chiede a
   `McpStdio.openedByBridge`: watchHost, aperto cosi', non apre il browser, come con
-  `--background`. **Non accende l'accesso**:
+  `--background`. **Il programma si apre solo quando Claude usa uno strumento** (dal 2026-11-13,
+  stesse versioni): Claude manda `initialize` e `tools/list` a ogni conversazione nuova, anche
+  se poi non usa niente, e aprirlo li' lo teneva sempre aperto. Il ponte copia l'ultima risposta
+  vera a quei due in `ponte-mcp\catalogo.json` (con nome, dimensione e data del jar: dopo un
+  aggiornamento la copia non vale piu'); a porta chiusa risponde da li', risponde da solo a `ping`
+  e lascia cadere le notifiche. Apre il programma solo un `tools/call` (o la prima volta, senza
+  copia). **Non accende l'accesso**:
   spento resta un errore che dice dove accenderlo. Esiste perche' il plugin di Claude e' un
   repository pubblico e non puo' portare il token: cosi' il token non finisce in `~/.claude.json`,
   e chi installa il plugin non deve sapere che il programma va aperto prima.
