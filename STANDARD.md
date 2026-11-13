@@ -319,7 +319,13 @@ Due cose, e servono entrambe:
 `--vendor`, `--description`, `--icon icon.ico`, `--dest dist`, `--win-upgrade-uuid`,
 `--win-dir-chooser`, `--win-shortcut`, `--win-menu`. In piu', dove serve, `--about-url` e
 `--java-options` (il tetto di heap e' una scelta di prodotto: TraceFox `-Xmx2g`, listBigStorage
-`-Xmx4g`).
+`-Xmx4g`). **Chi ha il ponte `--mcp` passa anche `--java-options -Xms8m`**, come opzione a se'
+(dal 2026-11-11: watchHost 1.0.15, listBigStorage 1.0.21, queryF5 1.2.16): il ponte gira dallo
+stesso eseguibile, uno per ogni conversazione di Claude, e senza `-Xms` ogni JVM impegna subito
+1/64 della RAM come heap iniziale. Su un PC da 32 GB erano 620 MB di commit per un ponte fermo,
+contro i 125 MB con `-Xms8m`; con 13 ponti aperti il PC aveva esaurito la memoria impegnabile, e
+le JVM nuove morivano con "failed to map … G1 virtual space". Lo heap del programma cresce quando
+serve, fino al tetto.
 
 - **`icon.ico` in radice e' obbligatoria** e lo script si ferma se manca: un pacchetto senza icona si
   riconosce a colpo d'occhio come qualcosa arrivato per sbaglio.
@@ -749,6 +755,13 @@ Le cose che decidono se funziona, e nessuna e' ovvia:
     piedi un PowerShell nascosto (`-EncodedCommand`, **mai** uno script su disco, che sarebbe
     scrivibile da un processo non elevato e poi eseguito elevato) che aspetta il PID, installa e
     riapre.
+  - **Prima di msiexec si chiudono anche i ponti `--mcp`** (dove ci sono; dal 2026-11-11:
+    watchHost 1.0.15, listBigStorage 1.0.21, queryF5 1.2.16). Girano dallo stesso eseguibile e
+    tengono aperti i file della cartella, `runtime\lib\modules` compreso: un file in uso msiexec lo
+    sostituisce solo al riavvio del PC, e il 2026-11-11 dopo il riavvio watchHost non partiva piu'
+    ("Failed setting boot class path"). Lo script chiude ogni processo con lo stesso percorso
+    dell'eseguibile prima di msiexec e ogni 250 ms mentre lavora, perche' Claude riapre da solo un
+    ponte caduto dopo qualche secondo. Vale anche per chi installa a mano: prima si chiudono i ponti.
   - **Il riavvio avviene nel processo NON elevato.** Riaprire il programma da dentro quello
     elevato lo farebbe girare come amministratore, cioe' su un altro `%LOCALAPPDATA%`: run,
     impostazioni, credenziali DPAPI e **licenza** — che e' cifrata per l'utente che l'ha attivata
@@ -797,7 +810,13 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   dal `CredentialStore` **senza generarlo**, inoltra ogni riga di stdin con un POST a
   `127.0.0.1:<porta>/mcp` (`HttpURLConnection`: niente Selector, niente trappola AF_UNIX) e
   rimanda la risposta su una riga. Se la porta e' chiusa **apre il programma una volta sola** e
-  aspetta 25 s; se una finestra e' gia' aperta non ne apre un'altra. **Non accende l'accesso**:
+  aspetta 25 s; se una finestra e' gia' aperta non ne apre un'altra. Lo apre **tramite Explorer**
+  (`explorer.exe <exe>`, dal 2026-11-11: watchHost 1.0.15, listBigStorage 1.0.21, queryF5
+  1.2.16), mai con `cmd /c start`: vedi la trappola AF_UNIX qui sotto. Explorer non passa
+  argomenti, quindi il ponte tiene il lock di avvio (`ponte-mcp\avvio.lock`) finche' il programma
+  non compare fra i processi, e il programma che deve saperlo lo chiede a
+  `McpStdio.openedByBridge`: watchHost, aperto cosi', non apre il browser, come con
+  `--background`. **Non accende l'accesso**:
   spento resta un errore che dice dove accenderlo. Esiste perche' il plugin di Claude e' un
   repository pubblico e non puo' portare il token: cosi' il token non finisce in `~/.claude.json`,
   e chi installa il plugin non deve sapere che il programma va aperto prima.
@@ -850,16 +869,30 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
 - **Il protocollo e' scritto a mano** (Jackson nei Java, System.Text.Json in .NET): `initialize`,
   `ping`, `tools/list`, `tools/call`, notifiche con 202, nessun SSE. Il dispatcher e' una classe
   pura, testata senza rete; il trasporto e' a parte.
-- **Trappola Java, `Unable to establish loopback connection`**: `HttpServer` apre un socket
-  AF_UNIX in `%TEMP%`, e con un TEMP dal percorso anomalo (succede nelle sandbox di sviluppo) non
-  parte. Il ripiego e' **solo su fallimento** e usa `jdk.net.unixdomain.tmpdir` =
-  `%LOCALAPPDATA%\<Nome>\sock`, mai la home dell'utente. **Impostare la proprieta' dopo il
-  fallimento non basta**: il JDK la legge una volta per processo, al primo Selector (in queryF5
-  e' quello della licenza, prima dell'MCP). Per questo il fallimento lascia un segnaposto
+- **Trappola Java, `Unable to establish loopback connection`**: ogni `Selector` del JDK (quindi
+  `HttpServer`, `HttpClient`, la dashboard di watchHost) si fa una pipe interna con un socket
+  AF_UNIX in `%TEMP%`. **Claude Desktop installato dallo Store e' un pacchetto MSIX**, e ogni
+  processo che nasce da lui (Claude Code, i ponti `--mcp`, cio' che i ponti lanciano) ne eredita
+  la virtualizzazione di AppData: li' dentro quel socket non si crea in **nessuna** cartella sotto
+  `AppData` (Local, Roaming, LocalLow, Temp), mentre in home, Documenti e Desktop si', e un
+  processo aperto da Explorer o dal menu Start, fuori dal pacchetto, funziona con i default
+  (provato il 2026-11-11). Fino a watchHost 1.0.14, listBigStorage 1.0.20 e queryF5 1.2.15 il
+  ponte apriva il programma con `cmd /c start`, quindi dentro il pacchetto, e con Claude Desktop
+  dallo Store il programma non partiva (watchHost moriva su `HttpServer.create`) o partiva senza
+  server MCP: **la cura e' Explorer**, non il ripiego. Lo stesso vale per i test che aprono server
+  veri (`McpSecurityTest` di listBigStorage) lanciati da Claude: si lanciano con
+  `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=<cartella fuori da AppData>`, che non cambia
+  niente negli eseguibili prodotti.
+
+  Il ripiego dentro i programmi resta per l'altro caso, un `%TEMP%` dal percorso anomalo o con
+  filtri sulla cartella. E' **solo su fallimento** e usa `jdk.net.unixdomain.tmpdir` =
+  `%LOCALAPPDATA%\<Nome>\sock`, mai la home dell'utente: dentro il pacchetto di Claude non basta,
+  perche' anche quella cartella sta sotto AppData. **Impostare la proprieta' dopo il fallimento
+  non basta**: il JDK la legge una volta per processo, al primo Selector (in queryF5 e' quello
+  della licenza, prima dell'MCP). Per questo il fallimento lascia un segnaposto
   `sock\ripiego-af-unix.txt`, e il `Launcher` — come prima istruzione — imposta la proprieta' se
   lo trova (un `-D` esplicito vince): vale dall'avvio successivo. Cancellare il segnaposto torna
-  al comportamento normale. Agli utenti normali non succede: e' stato visto solo con
-  `%TEMP%`/`%LOCALAPPDATA%` reindirizzati nella sandbox di sviluppo.
+  al comportamento normale.
 
 ## Il licensing nelle app desktop
 
