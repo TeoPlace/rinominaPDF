@@ -16,7 +16,8 @@ Set-Location $PSScriptRoot
 # 1.0.2: accetta tutte le famiglie di barcode di SorterNext (12 cifre, ABW/ACW, 17 cifre/ARG),
 # non solo 2 lettere + 10 cifre.
 # 1.0.3: la finestra a cinque zone dello standard, con storico e registro.
-$version     = "1.0.3"
+# 1.0.4: legge solo con sorter_barcode.dll (la libreria di sorter-barcode); Scandit/WSL e ZXing tolti.
+$version     = "1.0.4"
 $name        = "rinominaPDF"
 $vendor      = "teo.place"
 $mainClass   = "app.Launcher"
@@ -48,10 +49,15 @@ if (-not (Test-Path "icon.ico")) { throw "icon.ico non trovata nella radice del 
 Invoke-Native "mvn" @("clean", "package") "mvn package"
 if (-not (Test-Path "target\$jar")) { throw "Fat-jar non trovato: target\$jar" }
 
-# 2) Cartella di input con il SOLO fat-jar
+# 2) Cartella di input: il fat-jar e il lettore dei barcode, sorter_barcode.dll (lib\sorter-barcode,
+#    vedi il suo LEGGIMI.md). jpackage la mette in <installazione>\app\ accanto al jar, dove
+#    SorterBarcode.candidates() la cerca.
+$dll = "lib\sorter-barcode\sorter_barcode.dll"
+if (-not (Test-Path $dll)) { throw "manca $dll (vedi lib\sorter-barcode\LEGGIMI.md)" }
 if (Test-Path "target\jpackage-input") { Remove-Item "target\jpackage-input" -Recurse -Force }
 New-Item -ItemType Directory "target\jpackage-input" | Out-Null
 Copy-Item "target\$jar" "target\jpackage-input\"
+Copy-Item $dll "target\jpackage-input\"
 
 # 3) Destinazione. jpackage rifiuta di sovrascrivere, quindi si tolgono prima gli output di
 #    QUESTA versione — per nome esatto, mai "dist\*".
@@ -70,6 +76,9 @@ $common = @(
   "--description", $description,
   "--icon", "icon.ico",
   "--dest", $dest,
+  # La dll si chiama con la Foreign Function API: senza, Java 22 stampa un avviso a ogni avvio
+  # (e le versioni future la bloccheranno).
+  "--java-options", "--enable-native-access=ALL-UNNAMED",
   "--win-dir-chooser",
   "--win-shortcut",
   "--win-menu"

@@ -1,7 +1,5 @@
 package app.core;
 
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -43,8 +41,6 @@ public final class RenameJob {
     private volatile boolean aborted;
 
     private FileLogs logs;
-    private Path tempDir;
-    private boolean useWsl;
 
     public RenameJob(JobParams params, Listener listener) {
         this.params = params;
@@ -81,8 +77,6 @@ public final class RenameJob {
         Globals.processed.set(0);
         try {
             logs = new FileLogs(params.output());
-            tempDir = params.output().resolve(".rinominapdf_tmp");
-            Files.createDirectories(tempDir);
 
             try (Stream<Path> s = Files.list(params.input())) {
                 s.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".pdf"))
@@ -96,7 +90,13 @@ public final class RenameJob {
                 return; // onFinished parte comunque dal finally, una volta sola
             }
 
-            useWsl = BarcodeReader.isWslAvailable();
+            // Una volta prima dei worker: carica la dll e lo scrive nel registro. Senza dll
+            // l'installazione e' rovinata: errore fatale, non tutti i PDF "non letti".
+            LogQueue.add("lettore", "lettore: " + BarcodeReader.describeReader());
+            if (!SorterBarcode.available()) {
+                throw new IllegalStateException("lettore non disponibile: " + SorterBarcode.loadError()
+                        + " (reinstalla rinominaPDF)");
+            }
 
             List<Thread> threads = new ArrayList<>();
             while ((!queue.isEmpty() || !threads.isEmpty()) && !aborted) {
@@ -124,7 +124,6 @@ public final class RenameJob {
                 logs.error("JOB", e);
             }
         } finally {
-            cleanTempDir();
             threadStatus.clear();
             LogQueue.add("job", "fine: ok=" + okCount + " nonLetti=" + unreadCount
                     + " errori=" + errorCount + (aborted ? " (interrotto)" : ""));
@@ -169,36 +168,15 @@ public final class RenameJob {
     private void processOne(Path pdf) {
         String fileName = pdf.getFileName().toString();
         try {
-            List<String> barcodes = new ArrayList<>();
-            if (useWsl) {
-                for (Path png : PdfRenderer.renderToPng(pdf, tempDir)) {
-                    for (String b : BarcodeReader.readWithWsl(png)) {
-                        if (!barcodes.contains(b)) {
-                            barcodes.add(b);
-                        }
-                    }
-                    Files.deleteIfExists(png);
-                }
-            } else {
-                for (BufferedImage page : PdfRenderer.renderPages(pdf, Globals.RENDER_DPI_ZXING)) {
-                    for (String b : BarcodeReader.readWithZxing(page)) {
-                        if (!barcodes.contains(b)) {
-                            barcodes.add(b);
-                        }
-                    }
-                    // il codice invio è in pagina 1: se è già uscito, inutile
-                    // pagare la scansione a finestre delle pagine successive
-                    if (BarcodeReader.selectRight(barcodes) != null) {
-                        break;
-                    }
-                }
-            }
+            BarcodeReader.Lettura lettura = BarcodeReader.read(pdf);
+            List<String> barcodes = lettura.barcodes();
 
             String barcode = BarcodeReader.selectRight(barcodes);
             if (barcode == null) {
                 unreadCount.incrementAndGet();
-                logs.unread(fileName, "barcode non leggibile, letti: " + barcodes);
-                LogQueue.add("barcode", fileName + " -> NON LETTO (trovati: " + barcodes + ")");
+                logs.unread(fileName, "barcode non leggibile (" + lettura.lettore() + "), letti: " + barcodes);
+                LogQueue.add("barcode", fileName + " -> NON LETTO con " + lettura.lettore()
+                        + " (trovati: " + barcodes + ")");
                 return;
             }
 
@@ -225,14 +203,4 @@ public final class RenameJob {
         return target;
     }
 
-    private void cleanTempDir() {
-        if (tempDir == null) {
-            return;
-        }
-        try (Stream<Path> s = Files.list(tempDir)) {
-            s.forEach(p -> p.toFile().delete());
-        } catch (IOException ignored) {
-        }
-        tempDir.toFile().delete();
-    }
 }

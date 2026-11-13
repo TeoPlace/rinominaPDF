@@ -31,11 +31,9 @@ public final class ImpostazioniPane {
 
         Label lettore = new Label("Verifica in corso…");
         Thread verifica = new Thread(() -> {
-            // Fino a 20 secondi la prima volta, e il risultato resta: mai sul thread FX.
-            boolean wsl = BarcodeReader.isWslAvailable();
-            Platform.runLater(() -> lettore.setText(wsl
-                    ? "WSL con Scandit"
-                    : "ZXing, incluso nel programma (piu' lento: WSL con Scandit non e' disponibile)"));
+            // La prima volta carica la dll: fuori dal thread FX.
+            String lettori = BarcodeReader.describeReader();
+            Platform.runLater(() -> lettore.setText(lettori));
         }, "rinominapdf-verifica-lettore");
         verifica.setDaemon(true);
         verifica.start();

@@ -108,12 +108,12 @@ export const PRODOTTO: ConfigurazioneProdotto = {
     {
       "icona": "lucchetto",
       "titolo": "Scansioni fax degradate",
-      "testo": "Su 30 PDF di scansioni a 1 bit, compresse come fax e a bassa risoluzione, il lettore incluso ha trovato il codice giusto in 4. Quei PDF finiscono negli elenchi dei non letti, non con un nome sbagliato."
+      "testo": "Sui PDF a 1 bit del sorter, compressi come fax, trova il codice in circa uno su dieci (26 su 300 in una prova). Quelli che non legge finiscono negli elenchi dei non letti."
     },
     {
       "icona": "mano",
-      "titolo": "Lento senza WSL",
-      "testo": "Il lettore incluso (ZXing) impiega da 20 a 75 secondi per PDF su quelle scansioni. Se sul PC c’è WSL con Scandit, come per sorter-fx, usa quello."
+      "titolo": "Un solo lettore",
+      "testo": "Legge con la libreria di SorterNext, inclusa nel programma, in circa mezzo secondo a PDF. Non ha un secondo lettore da provare sui PDF che non legge."
     },
     {
       "icona": "confronto",
@@ -132,7 +132,7 @@ export const PRODOTTO: ConfigurazioneProdotto = {
     },
     {
       "domanda": "Serve WSL o Scandit?",
-      "risposta": "No. Se ci sono li usa, come sorter-fx; altrimenti legge i barcode da solo, più lentamente."
+      "risposta": "No, e non li usa neanche se ci sono: legge i barcode da solo, con la libreria di SorterNext inclusa nel programma."
     },
     {
       "domanda": "Come lo installo e lo aggiorno?",

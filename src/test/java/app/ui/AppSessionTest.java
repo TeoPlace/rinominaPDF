@@ -20,7 +20,7 @@ class AppSessionTest {
         assertEquals(LogCategory.ERRORI, AppSession.voce("14:32:05.123 [errore] x").category());
         assertEquals(LogCategory.AGGIORNAMENTI, AppSession.voce("14:32:05.123 [update] x").category());
         assertEquals(LogCategory.LAVORO, AppSession.voce("14:32:05.123 [job] x").category());
-        assertEquals(LogCategory.LAVORO, AppSession.voce("14:32:05.123 [wsl] x").category());
+        assertEquals(LogCategory.LAVORO, AppSession.voce("14:32:05.123 [lettore] x").category());
     }
 
     @Test

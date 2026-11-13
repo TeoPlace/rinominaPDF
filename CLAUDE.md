@@ -52,9 +52,27 @@ e convenzioni JavaFX valgono per tutta la cartella e non si ripetono qui.
 		-log-panel con le risorce utilizate (memoria, processamento) e stato delle thread 
 		-animazione leggera che rapresenta la rinomina dei file stile gioco anni 90
 
+#lettura barcode (dalla 1.0.4)
+
+	- Un solo lettore: `sorter_barcode.dll` (libreria di sorter-barcode, release pubblica
+	  lib_sorter_barcode_windows, copiata in `lib/sorter-barcode/` con LEGGIMI e sha256), chiamata con la
+	  Foreign Function API da `core/SorterBarcode`. Scandit/WSL e ZXing tolti su richiesta dell'utente
+	  (2026-11-13): niente lettore di riserva. Senza dll l'elaborazione si ferma con un errore fatale.
+	  Misure in README, "Lettura barcode".
+	- La dll e' a 64 bit, va accanto al jar (`build-msi.ps1` la copia in `jpackage-input`) e la JVM gira con
+	  `--enable-native-access=ALL-UNNAMED` (java-options di jpackage, argLine di surefire).
+	- La dll apre i file con `fopen` (codepage ANSI) e per un PDF senza immagini che sa aprire risponde -2:
+	  in entrambi i casi `BarcodeReader.read` renderizza le pagine con PDFBox e le passa a `sb_read_gray`.
+	  Su un PDF che apre ma senza codice valido NON si renderizza: a 300 DPI legge meno che dal file.
+	- I PDF veri per le misure: `Desktop\bench-250gb` (66.918 PDF gia' rinominati, il barcode atteso e' nel
+	  nome). Il case-input e il case-output qui sopra non esistono piu' (verificato il 2026-11-12).
+	- Difetto noto, non del lettore: la ricerca come sottostringa (`INNER_CODES`) prende `OO6986475960` da
+	  `...OOOO698647596022` nel DataMatrix di Poste: 3 nomi sbagliati su 300 con la sola libreria.
+
 #instruzioni
 
-	- su sorter-fx ci sono le instruzioni di come usare wsl per ricavare barcode, usa lo stesso metodo
+	- ~~su sorter-fx ci sono le instruzioni di come usare wsl per ricavare barcode, usa lo stesso metodo~~
+	  superata dalla 1.0.4: si legge solo con sorter_barcode, niente WSL (vedi "lettura barcode")
 	- su sorter-fx ci sta una gestione delle risorce del computer per controllo multi-thread, usa lo stesso metodo 
 	- su sorter-fx ci sta il log, inspirati su quello ma fai a modo tuo
 
@@ -89,6 +107,11 @@ e convenzioni JavaFX valgono per tutta la cartella e non si ripetono qui.
 	  `teoSetup-rinominapdf-ultimo.exe`.
 	- La 1.0.3 (finestra a cinque zone) e' pubblicata dal 2026-11-06, manifest precedente in
 	  `versione.json.bak-1.0.2`, blocco `wizard` conservato.
+	- La 1.0.4 (solo sorter_barcode) e' pubblicata dal 2026-11-13: MSI e manifest in
+	  `/var/www/scarica/rinominapdf/` (manifest precedente in `versione.json.bak-1.0.3`, blocco `wizard`
+	  1.0.13 conservato), sito nuovo in `/var/www/html/rinominapdf/dist/` (il precedente in
+	  `dist.bak-1.0.3`). Prima: installata qui sopra la 1.0.0, una sola voce in App installate.
+	  Verificati da fuori manifest, download (sha256 uguale) e pagina.
 	- L'esito dell'aggiornamento precedente, e "hai gia' l'ultima versione", vanno nel registro.
 	- Chiudere l'app durante un'elaborazione la interrompe e aspetta (max 90 s) i file gia' presi:
 	  i worker sono daemon e uccisi a meta' di `Files.copy` lascerebbero un PDF troncato col nome giusto.

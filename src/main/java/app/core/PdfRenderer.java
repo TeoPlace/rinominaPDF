@@ -14,8 +14,8 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 /**
- * Renderizza le pagine di un PDF in immagini PNG (PDFBox), necessarie sia
- * per Scandit via WSL (che legge file immagine) sia per il fallback ZXing.
+ * Renderizza le pagine di un PDF (PDFBox): in memoria per sorter_barcode quando il PDF non ha immagini
+ * che la libreria sa aprire, e in PNG per lo strumento RenderPagina.
  */
 public final class PdfRenderer {
 
@@ -35,8 +35,8 @@ public final class PdfRenderer {
     }
 
     /**
-     * Salva le pagine come PNG nella cartella temporanea indicata e
-     * restituisce i percorsi creati (input per la lettura via WSL).
+     * Salva le pagine come PNG nella cartella indicata e restituisce i percorsi creati
+     * (per guardare a occhio cosa vede il lettore: app.tools.RenderPagina).
      */
     public static List<Path> renderToPng(Path pdf, Path tempDir) throws IOException {
         Files.createDirectories(tempDir);

@@ -52,20 +52,11 @@ public final class Globals {
             Pattern.compile("^A[BC]W\\d{8}$"),
             Pattern.compile("^(?:ARG)?\\d{17}$"));
 
-    // --- WSL / Scandit (stesso metodo di sorter-fx) ---
-    public static final String SCANDIT_DIR = "/srv/scandit_multiple/";
-    public static final String SCANDIT_PROGRAM = "it.smaart.sorter.stock";
-    public static final String SCANDIT_KEY = "test.key";
-    public static final String SCANDIT_SETTINGS = "codes_ALL.settings";
-
-    /** DPI con cui le pagine PDF vengono renderizzate per Scandit via WSL. */
-    public static final int RENDER_DPI = 300;
-
     /**
-     * DPI per il fallback ZXing: sulle scansioni fax il DataMatrix si decodifica
-     * in modo affidabile solo a risoluzione più alta.
+     * DPI con cui si renderizzano le pagine dei PDF che sorter_barcode non sa aprire da solo, e quelle
+     * di RenderPagina.
      */
-    public static final int RENDER_DPI_ZXING = 600;
+    public static final int RENDER_DPI = 300;
 
     /**
      * Numero di thread di lavoro corrente: parte da 1 e viene regolato
