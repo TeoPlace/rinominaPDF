@@ -57,11 +57,10 @@ LETTURA**, si consulta e non si modifica.
 
 ### Gli strumenti di lavoro gratuiti: SorterNext, SorterBarcode, rinominaPDF
 
-Tre prodotti sono nel wizard, hanno sito e scheda sulla home, ma **non si vendono**: niente
-licenza nell'app, niente riga in `prodotti` su `authenticator`, niente Lemon Squeezy. Sono
-programmi di lavoro del sorter, usati da chi lavora i lotti, e una licenza li renderebbe solo piu'
-difficili da aprire per le persone per cui esistono. Per loro la sezione "Il licensing nelle app
-desktop" e le voci "Licenza" della lista di controllo **non valgono**; tutto il resto si'.
+Tre prodotti sono nel wizard, hanno sito e scheda sulla home, ma **non si sono mai venduti**:
+niente licenza nell'app, niente riga in `prodotti` su `authenticator`, niente Lemon Squeezy. Sono
+programmi di lavoro del sorter, usati da chi lavora i lotti. **Dal 2026-11-14 sono gratuiti anche
+tutti gli altri desktop**: vedi "Le app desktop sono gratuite".
 
 > **rinominaPDF era stato tolto dal wizard il 2026-08-28**: teoSetup lo elencava e provava a
 > installarlo, ma non c'era ne' il repo ne' un manifest pubblicato, e chi lo sceglieva non otteneva
@@ -384,8 +383,9 @@ che le legge (es. la cartella di log per logback: farlo in `App.init()` e' gia' 
 - La cartella di controllo e' **fissa**: `%LOCALAPPDATA%\<Nome>`. Non `%APPDATA%`/Roaming, che
   OneDrive sincronizza — con SQLite/WAL dentro produce lock, applicazioni lente e log da 0 byte.
 - **Quello che c'e' dentro sopravvive alla disinstallazione.** Vale per settings, certificati,
-  licenze. Conseguenza pratica: un flag "gia' fatto" scritto durante le prove in sviluppo si ritrova
-  intatto nella prima installazione vera, e la cosa che si voleva mostrare al nuovo utente non parte.
+  e i vecchi file di licenza di chi aveva attivato prima del 2026-11-14. Conseguenza pratica: un
+  flag "gia' fatto" scritto durante le prove in sviluppo si ritrova intatto nella prima
+  installazione vera, e la cosa che si voleva mostrare al nuovo utente non parte.
   Se una preferenza decide se qualcosa **compare**, il default dev'essere "compare", e a spegnerla
   dev'essere solo un gesto esplicito dell'utente.
 - **I segreti non vanno mai in chiaro su disco**: password e passphrase passano dal
@@ -414,7 +414,7 @@ BorderPane
   bottom  il piede                       riepilogo a sinistra, nome e versione a destra
 ```
 
-Le tre che si dimenticano, perche' non sono "la schermata principale":
+Le due che si dimenticano, perche' non sono "la schermata principale":
 
 1. **La barra di sinistra e' l'elenco di cio' che l'utente ha fatto** — i run in listBigStorage, le
    scansioni in PicPurg, le connessioni in watchCLI. In cima un pulsante hamburger che apre e
@@ -436,20 +436,14 @@ Le tre che si dimenticano, perche' non sono "la schermata principale":
    Il registro **non insegue l'ultima riga**: niente auto-scroll, o durante un'attivita' lunga
    diventa illeggibile proprio quando serve.
 
-3. **Il controllo della licenza sta nella barra del titolo, e non si nasconde mai.** Dice lo stato
-   quando c'e' una licenza e "Nessuna licenza · Accedi" quando non c'e', e in tutti e due i casi
-   apre la stessa finestra. Un controllo che compare solo a licenza attiva manca proprio a chi ne
-   ha bisogno: in listBigStorage ci si arrivava solo tentando una funzione Pro, cioe' bisognava
-   prima fallire per scoprire che si poteva accedere.
-
 **Le classi condivise si copiano, non si reinventano**: `Shell`, `AppSession`, `ThreadLog`,
 `LogBuffer`, `LogCategory`, `Dialogs`, `Icons`, `WindowResizer`, `theme/Themes`, `i18n/I18n`. Lo
 stato che deve sopravvivere alla ricostruzione dello Shell (cambio lingua a caldo) vive in
 `AppSession` e **non** nello Shell: altrimenti una tendina cancella il lavoro appena fatto.
 
 > **Come si sbaglia, e come si e' sbagliato davvero.** Il 2026-08-21 PicPurg e' nato con la sola
-> barra del titolo copiata e una finestra a vista unica: niente barra di sinistra, niente registro,
-> niente controllo licenza. Compilava, i test erano verdi, e sembrava finito. Non lo era, e la
+> barra del titolo copiata e una finestra a vista unica: niente barra di sinistra, niente registro.
+> Compilava, i test erano verdi, e sembrava finito. Non lo era, e la
 > differenza si vede solo aprendolo accanto a un altro programma della linea.
 >
 > La causa e' che questo file descriveva **la barra del titolo** e dava per implicito tutto il
@@ -764,8 +758,7 @@ Le cose che decidono se funziona, e nessuna e' ovvia:
     ponte caduto dopo qualche secondo. Vale anche per chi installa a mano: prima si chiudono i ponti.
   - **Il riavvio avviene nel processo NON elevato.** Riaprire il programma da dentro quello
     elevato lo farebbe girare come amministratore, cioe' su un altro `%LOCALAPPDATA%`: run,
-    impostazioni, credenziali DPAPI e **licenza** — che e' cifrata per l'utente che l'ha attivata
-    — sparirebbero alla vista, e sembrerebbe che l'aggiornamento abbia cancellato tutto.
+    impostazioni e credenziali DPAPI — cifrate per l'utente — sparirebbero alla vista, e sembrerebbe che l'aggiornamento abbia cancellato tutto.
   - **Si verifica l'impronta prima di installare.** Gli MSI della linea **non sono firmati**,
     quindi msiexec li esegue senza sapere da dove vengono: il `sha256` del manifest, servito in
     HTTPS dallo stesso sito del pacchetto, e' l'unica cosa che distingue il file giusto da uno
@@ -895,196 +888,45 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   `%LOCALAPPDATA%\<Nome>\sock`, mai la home dell'utente: dentro il pacchetto di Claude non basta,
   perche' anche quella cartella sta sotto AppData. **Impostare la proprieta' dopo il fallimento
   non basta**: il JDK la legge una volta per processo, al primo Selector (in queryF5 e' quello
-  della licenza, prima dell'MCP). Per questo il fallimento lascia un segnaposto
+  del server MCP o del controllo aggiornamenti). Per questo il fallimento lascia un segnaposto
   `sock\ripiego-af-unix.txt`, e il `Launcher` — come prima istruzione — imposta la proprieta' se
   lo trova (un `-D` esplicito vince): vale dall'avvio successivo. Cancellare il segnaposto torna
   al comportamento normale.
 
-## Il licensing nelle app desktop
+## Le app desktop sono gratuite
 
-**Le app desktop sono a pagamento, e dal 2026-08-16 lo verificano.** Prima non era vero: TraceFox
-e listBigStorage controllavano qualcosa, watchCLI e queryF5 **niente** — erano in vendita su Lemon
-Squeezy e chi pagava non riceveva nulla di diverso da chi non pagava.
+**Dal 2026-11-14 tutti i programmi desktop di teo.place sono gratuiti**: nessun account, nessuna
+attivazione, nessuna prova a tempo, nessuna funzione riservata. E' una decisione del proprietario:
+nessuno li aveva mai comprati, e chi li aveva installati riceve la versione senza licenza
+attraverso il normale aggiornamento automatico.
 
-Il modello e' **app intera a pagamento con 15 giorni di prova**, quindi lo sbarramento e'
-**all'avvio** e non su singole funzioni. Il contratto con il server (`activate` / `refresh` /
-`deactivate`, i claim del JWT, i codici d'errore) sta in `INTEGRAZIONE-DESKTOP.md`, sul server in
-`/var/www/html/authenticator/`. Qui solo cio' che vale per tutti:
+Fino a quel giorno valeva il modello "app intera a pagamento con 15 giorni di prova": pacchetto
+`license` (`DeviceId`, `Entitlement`, `LicenseClient`, `LicenseException`, `Licensing`, piu'
+`license/jwt_pubblica.pem`), sbarramento `LicenseGate` all'avvio, controllo della licenza nella
+barra del titolo, verifica al server a ogni avvio. **Non vale piu' per nessun programma**, e non va
+reintrodotto: niente sbarramenti, niente funzioni Pro, niente pillola della licenza.
 
-- **Il pacchetto e' lo stesso ovunque**: `DeviceId`, `Entitlement`, `LicenseClient`,
-  `LicenseException`, `Licensing`, piu' `license/jwt_pubblica.pem` fra le risorse. Il riferimento
-  da cui si copia e' TraceFox. Dove manca slf4j si usa `System.Logger` del JDK invece di tirare
-  dentro logback per due righe di diagnostica.
-- **Si verifica A OGNI AVVIO, e non e' piu' un controllo solo locale.** Dal 2026-08-23 ogni app
-  chiede al server se la licenza esiste ancora, prima dello sbarramento
-  (`Licensing.verificaAllAvvio()`). Prima il controllo era locale — due file e una firma RS256 — e
-  il rinnovo partiva solo quando mancavano tre giorni alla scadenza dell'entitlement: **cancellare
-  una licenza dal database non aveva nessun effetto per due settimane**. Una disdetta, un rimborso
-  o una revoca devono farsi sentire al primo avvio dopo, non quando scade un token.
+| prodotto | prima versione senza licenza |
+|---|---|
+| listBigStorage | 1.0.14 |
+| TraceFox | 1.0.12 |
+| PicPurg | 1.0.25 |
+| watchCLI | 1.0.13 |
+| queryF5 | 1.2.17 |
+| SorterNext, SorterBarcode, rinominaPDF, watchHost, teoSetup | non l'hanno mai avuta |
 
-  I tre esiti, e sono davvero tre:
+Il motivo per cui l'ordine conta: l'authenticator riscritto **non offre piu'** l'API delle licenze
+desktop (`/api/license/activate`, `refresh`, `deactivate`, il collegamento del PC dal browser).
+Una versione che la chiama ancora, il giorno in cui l'API sparisce, si comporta come senza rete:
+regge i quindici giorni di grazia e poi si chiude. Per questo le versioni senza licenza vanno
+pubblicate **prima** che l'authenticator nuovo vada in produzione.
 
-  | risposta | cosa succede |
-  |---|---|
-  | il server **conferma** | entitlement nuovo salvato, orologio della grazia riazzerato |
-  | il server **nega** | l'entitlement locale viene **buttato subito**, e lo sbarramento scatta |
-  | **non si riesce a chiedere** | non succede niente: si continua finche' la grazia regge |
+L'unica connessione che i programmi aprono per conto loro resta il **controllo aggiornamenti**
+(`versione.json` del sito): non e' pagamento e resta.
 
-- **La grazia offline vale 15 giorni, contati dall'ultima verifica RIUSCITA.** Queste applicazioni
-  si usano spesso dove la rete e' limitata o chiusa, e bloccarle il giorno in cui non si riesce a
-  chiedere il permesso sarebbe inutile esattamente quando servono. Quindici giorni di aereo, di
-  cantiere o di rete chiusa si attraversano lavorando; il sedicesimo no, perche' a quel punto il
-  programma non ha piu' nessun motivo di credere che la licenza esista ancora. Il momento
-  dell'ultima verifica sta in `%LOCALAPPDATA%\<Nome>\ultima-verifica.txt`, e lo stato si chiama
-  `NON_VERIFICATA`: non e' "scaduto" e non e' "non ce l'hai", ed e' l'unico dei tre che si risolve
-  **aprendo il programma con la rete**, non pagando. Va detto con parole sue, o si manda al
-  checkout chi ha gia' pagato.
-
-- **Un server rotto non e' un cliente moroso.** `offline`, `http_5xx` e `http_429` **non** tolgono
-  la licenza: sono guasti nostri, e farli pagare a chi ha pagato trasformerebbe un disservizio di
-  dieci minuti in una giornata di assistenza. Valgono come "non si e' potuto chiedere". Solo un
-  rifiuto del contratto (`invalid_license`, `inactive`, `cancelled`, `not_activated`...) revoca.
-
-- **L'avviso arriva prima del blocco.** Dove c'e' un registro a schermo (TraceFox, PicPurg) ogni
-  avvio senza verifica ci scrive quanti giorni restano; dove non c'e' (watchCLI, queryF5) compare
-  un avviso **solo negli ultimi tre giorni**, che e' il compromesso fra una sorpresa e un pedaggio.
-  In listBigStorage la licenza non sbarra il programma ma apre due funzioni, quindi finita la
-  grazia `isPro()` torna falso e quelle si richiudono: stessa regola, effetto proporzionato.
-- **`plan` vale `pro` oppure `trial`, e valgono uguale.** Rifiutare `trial` non chiude fuori
-  qualche curioso: chiude fuori dei clienti veri, e un secondo controllo sul piano sarebbe solo un
-  secondo posto in cui sbagliare — la scadenza e' gia' dentro `exp`, tagliato dal server. I due
-  valori restano distinti per il **messaggio**: "la prova e' finita" e "l'abbonamento e' scaduto"
-  mandano la stessa persona in due posti diversi.
-
-- **Il free trial di Lemon Squeezy NON e' `trial`.** Dal 2026-08-20 `plan` vale `trial` solo per
-  le licenze **omaggio emesse a mano** (`piani.tipo = 'trial'`), che dietro non hanno nessun
-  abbonamento e quando finiscono non diventano niente.
-
-  Un free trial e' un'altra cosa: e' un **abbonamento gia' sottoscritto**, con un piano scelto e
-  una carta registrata, in cui il primo addebito arriva dopo quindici giorni. Chiamarlo "prova"
-  contraddiceva l'area clienti, che sulla **stessa licenza** scrive «Attiva · Si rinnova il 4
-  settembre», e diceva a chi si era appena abbonato che stava per restare senza. Due nostre
-  superfici che descrivono la stessa cosa in due modi sono un difetto, non una sfumatura.
-
-  Corollario: **`prova_finisce_il` non decide piu' `plan`.** Resta come dato — dice quando parte
-  il primo addebito — ma non cambia che tipo di licenza sia.
-
-- **Su una variante in abbonamento la "License length" di Lemon Squeezy non vuol dire niente.**
-  LS la mostra solo per i pagamenti singoli: sugli abbonamenti la chiave segue l'abbonamento e
-  scade con lui, e il campo e' `display:none` nel pannello. Il valore che resta memorizzato e'
-  un default inerte, e infatti **diverge fra prodotti** senza alcun effetto — listBigStorage dice
-  `1 months` sul mensile e sull'annuale, tutti gli altri dicono `1 years`.
-
-  Va scritto perche' letto dall'API sembra un difetto grosso e credibile — "l'abbonamento annuale
-  emette una chiave che scade in un mese" — e il 2026-08-28 e' stato segnalato come tale. Non lo
-  e': l'unico posto dove quel campo conta davvero e' il **lifetime**, che infatti su tutti e sei i
-  prodotti ha `is_license_length_unlimited: true`. Prima di "correggerlo" si guarda
-  `is_subscription`.
-
-- **`ren` dice se `lex` e' un RINNOVO o una FINE, e serve perche' la data e' la stessa.** Per un
-  abbonamento attivo `scade_il` e' il giorno del prossimo addebito; per uno **disdetto** e' il
-  giorno in cui l'accesso finisce davvero. La disdetta non blocca subito — chi ha pagato fino al
-  31 usa il programma fino al 31 — quindi l'entitlement esiste in entrambi i casi e dalla data non
-  si capisce quale sia.
-
-  Sbagliarlo non e' una questione di stile: «si rinnova» a chi ha disdetto gli annuncia un
-  addebito che non ci sara', «fino al» a chi non ha disdetto gli dice che sta per perdere il
-  programma. Sono due bugie sul denaro, in direzioni opposte. Il claim e' **facoltativo** come
-  `ptp` e `lex`: assente vale `false`, e allora si scrive la data secca, che non promette niente.
-- **Uno sbarramento senza via d'uscita si legge come un guasto.** La finestra dice cosa e'
-  successo (tre frasi per tre situazioni: prova finita, abbonamento scaduto, mai avuto niente) e
-  ha il rimedio a portata di mano: una sezione che apre il browser sui piani, una per **accedere
-  dal browser**, e una per incollare la chiave ricevuta per email.
-
-- **Dal 2026-08-20 la strada normale e' l'AUTORIZZAZIONE DAL BROWSER.** L'applicazione mostra un
-  codice corto e apre `account.teo.place/collega`; li' l'utente e' gia' autenticato, vede quale
-  programma e su quale computer sta autorizzando, sceglie la licenza e conferma. Il programma nel
-  frattempo domanda al server, e si sblocca da solo. E' il flusso di TV e console. Il campo per la
-  chiave **resta**, sotto — chi ne ha una e non ha un account non va lasciato fuori.
-
-  **Nessuna applicazione desktop chiede la password dell'account, e non e' una preferenza.** Una
-  finestra che la chiede insegna a digitarla in qualunque finestra le somigli, ed e' esattamente
-  la forma del phishing — la stessa finestra dice gia' che «questa finestra non chiede mai i dati
-  di una carta, e nessun programma dovrebbe farlo». Per una password vale identico. Per questo nei
-  client **non esiste piu' il codice che la spediva**: `accesso()`, `licenzeDiQuestoProdotto()` e
-  `attivaDaAccount()` sono stati tolti da `LicenseClient`, non solo scollegati dalla UI. Un
-  percorso funzionante lasciato li' e' a disposizione della prima modifica che ha fretta. Gli
-  endpoint sul server restano, perche' li usa l'area clienti — nel browser, che e' il posto giusto.
-
-  **La chiave non viene "passata dal backend", e non e' un ripiego: il backend non ce l'ha.** In
-  `licenze` sta solo `chiave_hash` (sha256) piu' gli ultimi quattro caratteri per la UI — «MAI la
-  chiave in chiaro» e' scritto nello schema — e nemmeno il pannello di Lemon Squeezy sa mostrarne
-  una gia' emessa: la puo' solo rigenerare. Chi ha autorizzato dal browser ha pero' gia' dimostrato
-  di essere il titolare, quindi il server **firma direttamente l'entitlement**, partendo dall'hash
-  gia' salvato. Il claim `lkh` e' per definizione i primi 16 caratteri di quello stesso sha256,
-  quindi il token e' **identico** a quello che darebbe la chiave.
-
-- **I due codici hanno due mestieri diversi, e confonderli rompe tutto.**
-  `POST /api/license/device/inizia` ne restituisce due. Il **`deviceCode`** e' lungo, resta
-  nell'applicazione, non si mostra a nessuno ed e' **l'unica cosa che ritira l'entitlement**; in
-  tabella ne sta solo l'hash. Il **`userCode`** e' corto (`AB7K-9TQF`) perche' lo legge una
-  persona da uno schermo e lo ribatte altrove, e proprio perche' e' indovinabile **non autorizza
-  niente da solo**: identifica la richiesta, non la concede. L'alfabeto non ha `0`/`O` ne'
-  `1`/`I`/`L`, che a ribattere si confondono.
-
-  L'attivazione avviene quando l'app **ritira** (`POST /api/license/device/stato`), non quando il
-  browser conferma: cosi' l'entitlement nasce gia' legato al dispositivo che lo ritira, e non resta
-  scritto da qualche parte in attesa che qualcuno passi a prenderlo. Si ritira **una volta sola** —
-  lo stato `consumata` esiste per questo. La richiesta vive **dieci minuti**: una richiesta in
-  attesa e' una finestra aperta, e se nessuno conferma l'unica cosa che la richiude e' il tempo.
-
-  Nell'app, l'attesa sta su un thread **demone** e smette quando la finestra si chiude; un errore
-  di rete **non la interrompe**, si riprova al giro dopo. Chi ha appena confermato dal browser non
-  deve trovare un errore perche' una singola richiesta e' andata storta.
-
-- **Il token di dispositivo** (`POST /api/license/refresh-device`) serve al rinnovo: `refresh` si
-  autentica con la chiave, che in questo flusso non e' mai stata vista, e senza alternativa ogni
-  quattordici giorni il programma tornerebbe a chiedere la password — il fastidio che il login
-  doveva togliere. Sul server ne resta solo l'**hash**, su `attivazioni`, dove licenza+dispositivo
-  e' gia' chiave unica: da questo discendono gratis due cose che altrimenti erano da scrivere a
-  mano — revocare un dispositivo dall'area clienti ne cancella il token, e disdire l'abbonamento li
-  invalida tutti insieme.
-
-- **Il limite dispositivi, su quella strada, lo fa valere il NOSTRO database.** E' una decisione
-  esplicita: Lemon Squeezy lo applica dentro la propria `activate`, che vuole la chiave, e senza
-  chiave quella porta e' chiusa. Conseguenza da conoscere: per una licenza di origine
-  `lemonsqueezy` attivata da account, il contatore di LS non vede quel dispositivo.
-
-  Cio' che **non** cambia, ed e' il punto: si passa dagli stessi `verificaStatoLicenza` e
-  `firmaEntitlement` del percorso con la chiave. Disdetta, rimborso e scadenza fermano anche
-  questa strada, e `exp` resta tagliato a `scade_il`.
-- **Prova e acquisto sono la stessa pagina.** Da quando la prova e' il free trial nativo,
-  *avviare la prova e' un checkout*: due sezioni distinte descriverebbero due strade che portano
-  allo stesso posto. `POST /license/trial` non esiste piu'.
-- **L'etichetta dice quanto manca, non quando finisce.** In prova si contano i **giorni**
-  ("Prova · 12 giorni"): una data costringe a guardare il calendario per capire la stessa cosa. Con
-  un abbonamento si dice il **tipo** e cosa succede a quella data — "Pro mensile · si rinnova il 4
-  settembre 2026" oppure, se e' stato disdetto, "Pro mensile · fino al 4 settembre 2026". A vita
-  solo "Pro · a vita".
-
-  **Quando non c'e' niente, l'etichetta lo dice lo stesso**: "Nessuna licenza · Accedi". Un'etichetta
-  vuota non si distingue da un'etichetta rotta, e chi guarda non ha modo di sapere quale delle due
-  sta vedendo. L'invito resta dopo il separatore, o si toglierebbe la via d'uscita a chi la licenza
-  ce l'ha e deve solo collegarla. **La barra del titolo non riusa le stringhe del dialogo**: li' si
-  dice dove si e', nel dialogo cosa si puo' fare, e una chiave sola per due mestieri li lega per
-  sbaglio — e' successo, e il titolo si e' ritrovato a dire "Accedi nel browser".
-
-  I giorni si contano da **`lex`**, non da `exp`. La prova dura quindici giorni e la finestra
-  offline quattordici: nei primi giorni `exp` cade **prima** della fine vera, e contare da li'
-  anticiperebbe la scadenza — cioe' direbbe a un cliente che sta per perdere qualcosa che non sta
-  perdendo. E' la stessa confusione che per un abbonamento annuale gli farebbe credere di avere
-  due settimane invece di un anno.
-
-- **I file di licenza vanno in `%LOCALAPPDATA%\<Nome>`**, anche dove la configurazione sta altrove
-  per ragioni storiche (watchCLI e queryF5 la tengono in `%APPDATA%`, e spostarla farebbe sparire
-  connessioni salvate a chi aggiorna). Per l'entitlement `%LOCALAPPDATA%` e' comunque la scelta
-  giusta: `%APPDATA%` lo sincronizza OneDrive, e un entitlement e' legato al `deviceId` di *quella*
-  macchina — copiato altrove non vale, quindi sincronizzarlo non serve a nessuno.
-
-Il threat model non cambia: un client Java decompilato e patchato resta possibile ed e' **atteso**.
-L'obiettivo e' attrito ed equita', non inviolabilita'. **Un solo checkpoint**, nessun segreto nel
-client: moltiplicare i controlli non rende piu' difficile patchare, rende solo il codice piu'
-difficile da leggere.
+Chi aggiorna da una versione attivata si ritrova in `%LOCALAPPDATA%\<Nome>` i vecchi
+`entitlement.jwt`, `license.key` e `ultima-verifica.txt`: nessuno li legge piu' e restano li'
+innocui, come tutto cio' che sta in quella cartella (sopravvive alla disinstallazione per scelta).
 
 ## Un progetto nuovo
 
@@ -1113,8 +955,7 @@ manifest il prodotto compare disabilitato con scritto il motivo.
 ### La lista di controllo, perche' "copia da TraceFox" non basta
 
 Il 2026-08-21 un progetto nuovo e' stato consegnato compilante, con i test verdi e la barra del
-titolo giusta, ma **senza la barra di sinistra, senza il registro e senza il controllo della
-licenza**: cose che questo file dava per implicite e che nessun test puo' vedere. Da qui in avanti
+titolo giusta, ma **senza la barra di sinistra e senza il registro**: cose che questo file dava per implicite e che nessun test puo' vedere. Da qui in avanti
 la lista e' scritta. Un progetto nuovo e' finito quando ha **tutte** queste voci.
 
 **Impianto** (vedi "L'impianto della finestra"):
@@ -1164,21 +1005,9 @@ la lista e' scritta. Un progetto nuovo e' finito quando ha **tutte** queste voci
 - [ ] Porta propria (la prossima libera) o stdio, interruttore spento di default, token nel
       `CredentialStore`, nessun tool distruttivo, ogni chiamata visibile nel registro.
 
-**Licenza** — e' la voce che si rimanda e non va rimandata, perche' senza si finisce a vendere un
-programma identico alla sua copia gratuita:
-
-- [ ] Pacchetto `core/license` copiato (`DeviceId`, `Entitlement`, `LicenseClient`,
-      `LicenseException`, `Licensing`) piu' `license/jwt_pubblica.pem` fra le risorse.
-- [ ] `LicenseGate` con lo sbarramento all'**avvio** e il bottone nella barra del titolo.
-- [ ] Riga in `prodotti` sul database `authenticator` (una migrazione in
-      `authenticator-backend/database/`), **con il prezzo deciso**: il codice deve combaciare con
-      `AppInfo.PRODUCT_CODE` e con il claim `prd`, o ogni chiave valida viene rifiutata come "di un
-      altro programma".
-- [ ] Prodotto su Lemon Squeezy con il suo free trial: e' quello che emette le chiavi.
-
-> **Attenzione all'ordine**: accendere lo sbarramento prima che le ultime due voci esistano rende
-> il programma **impossibile da aprire**, anche a chi lo ha scritto — non c'e' nessuna licenza che
-> possa passare. O si fanno insieme, o lo sbarramento resta spento con un TODO visibile.
+**Niente licenza**: i programmi della linea sono gratuiti (vedi "Le app desktop sono
+gratuite"), quindi un progetto nuovo non ha pacchetto `license`, sbarramento ne' riga in
+`prodotti` sull'authenticator.
 
 Il `CLAUDE.md` del progetto nuovo descrive **solo** il progetto: cos'e', la mappa dei package, i
 flussi, i suoi invarianti e le sue trappole. Build, versioni, nomenclatura e packaging **non si
