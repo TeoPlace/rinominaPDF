@@ -26,7 +26,7 @@ Dalla 1.0.4 il lettore e' uno solo (`app/core/BarcodeReader`):
 **sorter_barcode.dll**, la libreria C di sorter-barcode (la stessa di
 SorterNext), dalla release pubblica
 [lib_sorter_barcode_windows](https://github.com/TeoPlace/lib_sorter_barcode_windows)
-1.2.0, in `lib/sorter-barcode/` (versione, sha256 e come si aggiorna nel suo
+1.2.1, in `lib/sorter-barcode/` (versione, sha256 e come si aggiorna nel suo
 `LEGGIMI.md`). Viaggia nel pacchetto accanto al jar e si chiama dentro il
 processo con la Foreign Function API (`app/core/SorterBarcode`): legge
 direttamente le immagini delle pagine del PDF, circa mezzo secondo a PDF. Se
@@ -62,8 +62,8 @@ Tool diagnostici da riga di comando (senza UI), lanciati dalla radice del repo
 cosi' trovano `lib\sorter-barcode\sorter_barcode.dll`:
 
 ```
-java --enable-native-access=ALL-UNNAMED -cp target\rinominaPDF-1.0.4-all.jar app.tools.DiagnosticaBarcode <cartellaPdf>
-java -cp target\rinominaPDF-1.0.4-all.jar app.tools.RenderPagina <file.pdf> <cartellaOut>
+java --enable-native-access=ALL-UNNAMED -cp target\rinominaPDF-1.0.5-all.jar app.tools.DiagnosticaBarcode <cartellaPdf>
+java -cp target\rinominaPDF-1.0.5-all.jar app.tools.RenderPagina <file.pdf> <cartellaOut>
 ```
 
 ## Installer MSI

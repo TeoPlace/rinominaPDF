@@ -35,7 +35,7 @@ class SorterBarcodeTest {
     @Test
     void laDllSiCaricaEDaLaSuaVersione() {
         assertTrue(SorterBarcode.available(), () -> "dll non caricata: " + SorterBarcode.loadError());
-        assertEquals("1.2.0", SorterBarcode.version());
+        assertEquals("1.2.1", SorterBarcode.version());
     }
 
     @Test

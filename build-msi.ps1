@@ -17,7 +17,8 @@ Set-Location $PSScriptRoot
 # non solo 2 lettere + 10 cifre.
 # 1.0.3: la finestra a cinque zone dello standard, con storico e registro.
 # 1.0.4: legge solo con sorter_barcode.dll (la libreria di sorter-barcode); Scandit/WSL e ZXing tolti.
-$version     = "1.0.4"
+# 1.0.5: la dll e' la 1.2.1 (DataMatrix deformati dalla scansione: a trapezio, stirati, con un lato sbavato).
+$version     = "1.0.5"
 $name        = "rinominaPDF"
 $vendor      = "teo.place"
 $mainClass   = "app.Launcher"

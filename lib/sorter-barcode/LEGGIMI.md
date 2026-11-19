@@ -8,9 +8,9 @@ SorterBarcode, presa **cosi' com'e'** dalla release pubblica
 
 | | |
 |---|---|
-| versione (`sb_version()`) | **1.2.0** |
-| da | release `v1.2.0`, `lib_sorter_barcode_windows.zip` (sha256 `c529b1762b180615be7ca39892d8876826ee0e86d898abea9241fbeab8cc1fc1`, verificato), file `bin\x64\sorter_barcode.dll` |
-| sha256 della dll | `8495c91a4b5413b3e170a54c2844effd8e11ea0d7d9b3f49858eeeb815e1a529` |
+| versione (`sb_version()`) | **1.2.1** |
+| da | release `v1.2.1`, `lib_sorter_barcode_windows.zip` (sha256 `27393ea5fe7c06c3a1e95864bc51b1579ba1cf53fbfa866a4bdb8e07c562a9a8`, verificato), file `bin\x64\sorter_barcode.dll` |
+| sha256 della dll | `22b2fc11e60a5ddb23f2d6df685f0d873738e513db4c1b0015ff1b46387f5709` |
 
 ## Come viaggia
 

@@ -112,6 +112,9 @@ e convenzioni JavaFX valgono per tutta la cartella e non si ripetono qui.
 	  1.0.13 conservato), sito nuovo in `/var/www/html/rinominapdf/dist/` (il precedente in
 	  `dist.bak-1.0.3`). Prima: installata qui sopra la 1.0.0, una sola voce in App installate.
 	  Verificati da fuori manifest, download (sha256 uguale) e pagina.
+	- La 1.0.5 (dll sorter_barcode 1.2.1: DataMatrix deformati dalla scansione) e' pubblicata dal 2026-11-19: MSI e manifest in
+	  `/var/www/scarica/rinominapdf/` (manifest precedente in `versione.json.bak-1.0.4`, blocco `wizard` 1.0.13 conservato).
+	  `build-msi.ps1` non scrive `versione.json`: il manifest nuovo si scrive a mano partendo da quello del server.
 	- L'esito dell'aggiornamento precedente, e "hai gia' l'ultima versione", vanno nel registro.
 	- Chiudere l'app durante un'elaborazione la interrompe e aspetta (max 90 s) i file gia' presi:
 	  i worker sono daemon e uccisi a meta' di `Files.copy` lascerebbero un PDF troncato col nome giusto.

@@ -9,7 +9,7 @@
     <artifactId>rinominapdf</artifactId>
     <!-- Tre campi crescenti, niente -SNAPSHOT (vedi STANDARD.md). Allineata a AppInfo.VERSION e a
          build-msi.ps1: lo verifica VersionTest. -->
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
     <name>rinominaPDF</name>
     <description>Rinomina PDF tramite barcode letti con sorter_barcode</description>
