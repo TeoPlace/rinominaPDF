@@ -144,5 +144,5 @@ export const PRODOTTO: ConfigurazioneProdotto = {
     }
   ],
   "chiusura": "Mettilo davanti a una cartella di PDF",
-  "requisiti": "Windows 10 o superiore (64 bit) — Java è incluso, non serve installare altro"
+  "requisiti": "Windows 10 o superiore (64 bit) — non serve installare altro"
 };

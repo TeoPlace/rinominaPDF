@@ -1,0 +1,44 @@
+/* rinominaPDF: solo cio' che il kit non ha. Stesse variabili del tema (callApi). */
+.rp-main { height: 100%; overflow: auto; }
+.rp-pane { padding: 24px; display: flex; flex-direction: column; gap: 14px; max-width: 760px; }
+.rp-pane h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.rp-grid { display: grid; grid-template-columns: 90px 1fr; gap: 12px 10px; align-items: center; }
+.rp-grid label { color: var(--muted); }
+.rp-row { display: flex; gap: 8px; }
+.rp-input { flex: 1; min-width: 0; background: var(--mantle); border: 1px solid var(--border1); border-radius: 4px; color: var(--text); padding: 6px 8px; font: inherit; }
+.rp-input:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+.rp-error { color: var(--danger); }
+.rp-start { align-self: stretch; justify-content: center; padding: 8px; }
+.rp-retro { width: 100%; max-width: 640px; height: auto; border: 1px solid var(--border1); border-radius: 4px; image-rendering: pixelated; }
+.rp-progress-row { display: flex; align-items: center; gap: 10px; }
+.rp-progress { flex: 1; height: 10px; background: var(--surface0); border-radius: 5px; overflow: hidden; }
+.rp-progress > div { height: 100%; background: var(--accent); transition: width .2s; }
+.rp-percent { width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+.rp-workers { font-family: var(--mono); font-size: 12px; margin: 0; white-space: pre-wrap; color: var(--muted); }
+.rp-kpis { display: flex; gap: 10px; }
+.rp-kpi { flex: 1; border: 1px solid var(--border1); border-radius: 6px; padding: 10px 14px; display: flex; flex-direction: column; }
+.rp-kpi b { font-size: 24px; font-weight: 600; }
+.rp-kpi span { color: var(--muted); font-size: 12px; }
+.rp-kpi.ok b { color: var(--green); }
+.rp-kpi.warn b { color: #e5b567; }
+.rp-kpi.crit b { color: var(--danger); }
+.rp-grid2 { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; word-break: break-all; }
+.rp-kv { display: grid; grid-template-columns: 160px 1fr; gap: 10px; }
+.rp-kv span { color: var(--muted); }
+.rp-spacer { flex: 1; }
+.rp-register { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.rp-reg-head { display: flex; gap: 14px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border1); font-size: 12px; flex-wrap: wrap; }
+.rp-chip { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); cursor: pointer; }
+.rp-reg-lines { flex: 1; min-height: 0; overflow: auto; font-family: var(--mono); font-size: 12px; }
+.rp-reg-empty { color: var(--muted); padding: 12px; }
+.rp-line { display: flex; gap: 10px; padding: 1px 12px; }
+.rp-line:hover { background: var(--console-log-hover-bg); }
+.rp-time, .rp-tag { color: var(--muted); flex: none; }
+.rp-line.errori .rp-text, .rp-line.errori .rp-tag { color: var(--danger); }
+.rp-line.nonLetti .rp-tag { color: #e5b567; }
+.rp-line.rinominati .rp-tag { color: var(--green); }
+.rp-text { user-select: text; word-break: break-all; }
+.rp-veil { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 70; display: flex; align-items: center; justify-content: center; }
+.rp-dialog { background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; padding: 18px 20px; width: 460px; max-width: 94vw; }
+.rp-dialog h3 { margin: 0 0 12px; font-size: 15px; }
+.rp-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }

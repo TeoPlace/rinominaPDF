@@ -3,8 +3,8 @@
 Il lettore dei barcode di rinominaPDF: la libreria C di sorter-barcode, la stessa di SorterNext e
 SorterBarcode, presa **cosi' com'e'** dalla release pubblica
 [lib_sorter_barcode_windows](https://github.com/TeoPlace/lib_sorter_barcode_windows) (licenza MIT, in
-`LICENSE` qui accanto) e chiamata dentro il processo con la Foreign Function API di Java 22
-(`src/main/java/app/core/SorterBarcode.java`).
+`LICENSE` qui accanto) e chiamata dentro il processo con koffi (dalla 2.0; fino alla 1.x con la Foreign Function API di Java 22
+`src/main/reader/native.ts`; la 1.x: `legacy-java/src/main/java/app/core/SorterBarcode.java`).
 
 | | |
 |---|---|

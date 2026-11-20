@@ -1,42 +1,30 @@
-# rinominaPDF — costruzione degli installer Windows.
+# rinominaPDF 2.x (Electron + React + TypeScript) - costruzione dell'installer Windows, da questo repo soltanto:
+#   dist\rinominaPDF-<v>.msi   la finestra (Electron) + sorter_barcode.dll (lib\sorter-barcode, copia della release pubblica)
+#   dist\versione.json         il manifest che teoSetup, il sito e l'app leggono (STANDARD.md, "Il wizard di installazione")
 #
-# Metodo, nomenclatura e invarianti sono quelli comuni a tutta la cartella: vedi STANDARD.md.
-# In breve: fat-jar con maven-shade + jpackage, che include la JVM nel pacchetto; l'utente finale
-# NON deve installare ne' Java ne' JavaFX ne' altre librerie.
+# Metodo, nomenclatura e invarianti sono quelli comuni a tutta la cartella: vedi STANDARD.md. Cambia solo il motore:
+# niente Maven, niente jpackage e niente JRE dentro, `electron-builder` fa l'MSI (WiX 3.x) con lo STESSO UpgradeCode della
+# 1.x (Java), cosi' l'MSI si installa SOPRA la 1.x. La libreria C e' un binario pubblico preso cosi' com'e': non si ricompila.
 #
-# Requisiti per chi compila: JDK 22 (con jpackage) e Maven nel PATH, piu' WiX Toolset 3.x.
+# Requisiti: Node 24, WiX Toolset 3.x, e `npm install` fatto (il kit e' un link a ..\teo-kit).
 # Uso: powershell -ExecutionPolicy Bypass -File .\build-msi.ps1
 
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-# ─── Identita' del prodotto ──────────────────────────────────────────────────────────────────
-# 1.0.1: la prima con il controllo aggiornamenti dentro l'app (core/update). Chi ha la 1.0.0
-# non ce l'ha, quindi questa la installa a mano; dalla successiva arriva da sola.
-# 1.0.2: accetta tutte le famiglie di barcode di SorterNext (12 cifre, ABW/ACW, 17 cifre/ARG),
-# non solo 2 lettere + 10 cifre.
-# 1.0.3: la finestra a cinque zone dello standard, con storico e registro.
-# 1.0.4: legge solo con sorter_barcode.dll (la libreria di sorter-barcode); Scandit/WSL e ZXing tolti.
-# 1.0.5: la dll e' la 1.2.1 (DataMatrix deformati dalla scansione: a trapezio, stirati, con un lato sbavato).
-$version     = "1.0.5"
-$name        = "rinominaPDF"
-$vendor      = "teo.place"
-$mainClass   = "app.Launcher"
-$description = "Rinomina PDF leggendone i barcode"
+$name = "rinominaPDF"
+$pkg = Get-Content package.json -Raw | ConvertFrom-Json
+$version = $pkg.version
 
-# UpgradeCode congelato (vedi STANDARD.md): e' quello con cui la 1.0.0 e' gia' stata distribuita,
-# riletto dalla tabella Property dell'MSI. Va tenuto ANCHE ora che il vendor e' diventato
-# "teo.place": jpackage lo deriva da "UpgradeCode/<vendor>/<nome>", quindi senza questa riga il
-# cambio di vendor avrebbe affiancato un secondo rinominaPDF a chi ha gia' l'attuale.
+# UpgradeCode CONGELATO (tabella "Identita' dei prodotti" di STANDARD.md): e' quello della 1.x. Non si cambia.
 $upgradeCode = "6E50594E-22A6-3AC3-A7FB-48CFCA119568"
+if ((Get-Content electron-builder-config.js -Raw) -notmatch [regex]::Escape($upgradeCode)) {
+  throw "electron-builder-config.js non porta l'UpgradeCode congelato $upgradeCode"
+}
+# La 1.x gia' distribuita dichiara 1.0.5: la 2.0.0 sale di campo maggiore, quindi Windows la tratta come aggiornamento.
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "La versione deve avere tre campi: $version" }
+if (-not (Test-Path "lib\sorter-barcode\sorter_barcode.dll")) { throw "manca lib\sorter-barcode\sorter_barcode.dll (vedi lib\sorter-barcode\LEGGIMI.md)" }
 
-$jar  = "$name-$version-all.jar"
-$dest = "dist"
-
-# ─── Comandi nativi ──────────────────────────────────────────────────────────────────────────
-# mvn/jpackage non alzano eccezioni: l'unico verdetto e' l'exit code. Dentro la funzione
-# ErrorActionPreference torna a "Continue" perche' con "Stop" una qualunque riga su stderr di un
-# eseguibile nativo (anche un avviso di JavaFX durante i test) diventerebbe un errore terminante.
 function Invoke-Native {
   param([string]$Exe, [string[]]$Arguments, [string]$What)
   $ErrorActionPreference = "Continue"
@@ -44,62 +32,35 @@ function Invoke-Native {
   if ($LASTEXITCODE -ne 0) { throw "$What fallito (exit $LASTEXITCODE)" }
 }
 
-if (-not (Test-Path "icon.ico")) { throw "icon.ico non trovata nella radice del progetto" }
+# 1) I test prima di tutto: un MSI che non passa i test non si costruisce.
+Invoke-Native "npx.cmd" @("vitest", "run") "test"
+# 2) Tipi: tsc senza emissione.
+Invoke-Native "npx.cmd" @("tsc", "--noEmit", "-p", ".") "tsc"
+# 3) Processo principale (esbuild) + interfaccia (vite) + MSI.
+Invoke-Native "npm.cmd" @("run", "dist") "electron-builder"
 
-# 1) Fat-jar (VersionTest, dentro i test, verifica che version/pom/AppInfo siano allineati)
-Invoke-Native "mvn" @("clean", "package") "mvn package"
-if (-not (Test-Path "target\$jar")) { throw "Fat-jar non trovato: target\$jar" }
+# 4) Come gli altri prodotti: l'installer finisce in dist\ con il nome della convenzione, e il manifest accanto.
+New-Item -ItemType Directory -Force dist | Out-Null
+$msi = "out\$name-$version.msi"
+if (-not (Test-Path $msi)) { throw "MSI non trovato: $msi" }
+Copy-Item $msi "dist\$name-$version.msi" -Force
 
-# 2) Cartella di input: il fat-jar e il lettore dei barcode, sorter_barcode.dll (lib\sorter-barcode,
-#    vedi il suo LEGGIMI.md). jpackage la mette in <installazione>\app\ accanto al jar, dove
-#    SorterBarcode.candidates() la cerca.
-$dll = "lib\sorter-barcode\sorter_barcode.dll"
-if (-not (Test-Path $dll)) { throw "manca $dll (vedi lib\sorter-barcode\LEGGIMI.md)" }
-if (Test-Path "target\jpackage-input") { Remove-Item "target\jpackage-input" -Recurse -Force }
-New-Item -ItemType Directory "target\jpackage-input" | Out-Null
-Copy-Item "target\$jar" "target\jpackage-input\"
-Copy-Item $dll "target\jpackage-input\"
-
-# 3) Destinazione. jpackage rifiuta di sovrascrivere, quindi si tolgono prima gli output di
-#    QUESTA versione — per nome esatto, mai "dist\*".
-New-Item -ItemType Directory -Force $dest | Out-Null
-foreach ($f in @("$dest\$name-$version.msi", "$dest\$name-$version.exe")) {
-  if (Test-Path $f) { Remove-Item $f -Force }
+# versione.json, SENZA il blocco "wizard": sul server il manifest nuovo lo eredita da quello pubblicato
+$i = Get-Item "dist\$name-$version.msi"
+$m = [ordered]@{
+  disponibile = $true; versione = $version; file = $i.Name
+  dimensione  = ('{0:N1} MB' -f ($i.Length / 1MB)); data = (Get-Date -Format 'yyyy-MM-dd')
+  sha256      = (Get-FileHash $i.FullName -Algorithm SHA256).Hash.ToLower()
 }
-
-$common = @(
-  "--input", "target\jpackage-input",
-  "--main-jar", $jar,
-  "--main-class", $mainClass,
-  "--name", $name,
-  "--app-version", $version,
-  "--vendor", $vendor,
-  "--description", $description,
-  "--icon", "icon.ico",
-  "--dest", $dest,
-  # La dll si chiama con la Foreign Function API: senza, Java 22 stampa un avviso a ogni avvio
-  # (e le versioni future la bloccheranno).
-  "--java-options", "--enable-native-access=ALL-UNNAMED",
-  "--win-dir-chooser",
-  "--win-shortcut",
-  "--win-menu"
-)
-
-Invoke-Native "jpackage" ($common + @(
-  "--type", "msi", "--win-upgrade-uuid", $upgradeCode)) "jpackage (msi)"
-
-# L'exe e' l'MSI incapsulato in un bootstrapper: stesso UpgradeCode, altrimenti installando prima
-# l'uno e poi l'altro si finisce con due voci per lo stesso programma.
-Invoke-Native "jpackage" ($common + @(
-  "--type", "exe", "--win-upgrade-uuid", $upgradeCode)) "jpackage (exe)"
+[IO.File]::WriteAllText("dist\versione.json", ($m | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
 
 Write-Host ""
-Write-Host "Creati in $dest\:" -ForegroundColor Green
-Get-ChildItem "$dest\*.msi", "$dest\*.exe" |
-  Select-Object Name, @{N = "MB"; E = { [math]::Round($_.Length / 1MB, 1) } }
+Write-Host "Creato in dist\:" -ForegroundColor Green
+Get-ChildItem "dist\$name-$version.msi", "dist\versione.json" | Select-Object Name, @{N = "MB"; E = { [math]::Round($_.Length / 1MB, 1) } }
 Write-Host ""
 Write-Host "Prima di pubblicare, la prova che conta non e' che il build passi:"
-Write-Host "  1. installare la versione precedente, poi questa SOPRA;"
-Write-Host "  2. non deve comparire la richiesta di disinstallare prima;"
-Write-Host "  3. in 'App installate' deve restare UNA sola voce;"
-Write-Host "  4. le impostazioni in %LOCALAPPDATA%\$name devono sopravvivere."
+Write-Host "  1. la versione $version e' maggiore di quella in https://rinominapdf.teo.place/scarica/versione.json (1.0.5);"
+Write-Host "  2. installare la 1.x, poi questa SOPRA: non deve chiedere di disinstallare, in 'App installate' UNA sola voce;"
+Write-Host "  3. l'elenco in %LOCALAPPDATA%\$name\elaborazioni.json deve sopravvivere e riaprirsi nella barra di sinistra."
+Write-Host ""
+Write-Host "Non si pubblica niente da qui: manifest e caricamento su KVM2 sono un passo a parte (STANDARD.md)." -ForegroundColor Cyan

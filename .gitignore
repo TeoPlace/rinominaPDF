@@ -21,3 +21,10 @@ dist/
 
 # --- Sito ---
 sito/node_modules/
+
+# --- Electron (2.x) ---
+node_modules/
+build/
+out/
+resources/native/
+tests/.tmp/

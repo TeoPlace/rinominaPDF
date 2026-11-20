@@ -1,120 +1,69 @@
 # CLAUDE.md — rinominaPDF
 
-**Prima leggi `STANDARD.md`**: toolchain, versionamento, nomenclatura degli artefatti, metodo di
-packaging (fat-jar + jpackage, con la JVM dentro: l'utente finale non installa ne' Java ne' JavaFX)
-e convenzioni JavaFX valgono per tutta la cartella e non si ripetono qui.
+**Prima leggi `STANDARD.md`**: versionamento, nomenclatura degli artefatti, `build-msi.ps1` e la sezione «Prodotti Electron — `teo-kit`» valgono per
+tutta la cartella e non si ripetono qui. Il `README.md` descrive il prodotto, la finestra e i comandi.
 
-#workspace e dont-touch rule
+**Dalla 2.0.0 (2026-11-20) rinominaPDF e' Electron + React + TypeScript, senza Java**, sopra `..\teo-kit` (`docs\ARCHITETTURA.md`). La 1.x (Java 22 +
+JavaFX + jpackage) sta in `legacy-java\` solo come riferimento di migrazione: non si modifica e non entra nel pacchetto.
 
-	- usa C:\Users\tsousasilva\Desktop\projects\sorter-fx\2.0.4 solo come riferimento ###non fare modifiche su questa cartella### mi riferirà a questa cartella come sorter-fx
-	- usa C:\Users\tsousasilva\Desktop\projects\queryF5  solo come riferimento ###non fare modifiche su questa cartella###  mi riferirà a questa cartella come queryF5
-	- usa C:\Users\tsousasilva\Desktop\TEST PDF\pacchi_iniziale\063049_NAPOLI\2026\MP297\INTEGRAA-CONSEGNATO come test-case di entrata  ###non fare modifiche su questa cartella###  mi riferirà a questa cartella come case-input
-	- usa C:\Users\tsousasilva\Desktop\TEST PDF\pacchi_iniziale\OUTPUT come obietivo da raggiungere ###non fare modifiche su questa cartella###  mi riferirà a questa cartella come case-output
-	- usa C:\Users\tsousasilva\Desktop\projects\rinominaPDF come workspace ###sei libero di fare modifiche su questa cartella###  mi riferirà a questa cartella come workspace
+## Workspace e regole di non-tocco
 
-#il progetto
+- `sorter-fx\2.0.4`, `queryF5` e `teo-kit` sono **riferimenti in sola lettura**.
+- I vecchi test-case (`case-input`, `case-output`) non esistono piu' (verificato il 2026-11-12). I PDF veri per le misure: `Desktop\bench-250gb`
+  (66.918 PDF gia' rinominati, il barcode atteso e' nel nome). I test del repo usano `tests\fixtures\sample.pdf` e PDF generati.
+- Niente commit e niente push da parte di Claude (`STANDARD.md`, regola 1); si pubblica sul server solo con un «pubblica» dell'utente.
 
-	rinominaPDF ha l'obbietivo di :
-		-aprire un pdf
-		-leggere barcodes nel file pdf 
-		-selezionare il barcode giusto 
-		-rinominare pdf con i dati:
-			RB0002858945-sorter-COMPIUTAGIACENZA-000063064-2026-66555P310.pdf
-			<barcode> - sorter - <status> - <istat> - <anno> - <pacco> .pdf dove :
-				-barcode: trovato all'interno del pdf e selezionato quello giusto 
-				-sorter: testo fisso 
-				-status: selezionato dal'utente tramite UI dalle opzioni:
-					COMPIUTAGIACENZA
-					CONSEGNATO
-					RIFIUTATO
-					TRASFERITO
-					IRREPERIBILE
-					EMESSOCAD
-					DECEDUTO
-					ATTIVITACESSATA
+## Il progetto
 
-				-istat: inserito dall'utente tramite UI formato 000000000, quindi aggiungere 0 a sinistra 
-				-anno: inserito dall'utente (controllo regex se non è anno non va avanti)
-				-pacco: inserito dall'utente 
-				
-#flusso UI 
-	- utente installa il msi, apri il file .exe 
-	- si apri un'interfaccia che chiedi :
-		-Input : folder dove sono i file .pdf 
-		-Output: folder dove i file rinominati saranno salvati 
-		-Esito: elenco dei esiti da selezionare 
-		-Istat: input 
-		-Anno: input 
-		-pacco: input 
-	-carrica view con: 
-		-progress-bar 0-100 che si aggiorna
-		-tasto per aprire/chiudere log-panel 
-		-log-panel con le risorce utilizate (memoria, processamento) e stato delle thread 
-		-animazione leggera che rapresenta la rinomina dei file stile gioco anni 90
+Apre i PDF di una cartella, legge i barcode, sceglie quello giusto e **copia** (mai sposta) i file nella cartella di output come
+`<barcode>-sorter-<esito>-<istat>-<anno>-<pacco>.pdf`. Esito scelto fra gli otto di `ESITI`, istat con zeri a sinistra fino a 9 cifre, anno 19xx/20xx,
+pacco solo lettere e numeri in maiuscolo. Le regole stanno tutte in `src/shared/rules.ts` (pure, le usano main, worker e interfaccia): **sono il
+contratto verso chi lavora i lotti, portate dalla 1.x senza cambiare un carattere** — i test `rules.test.ts` sono quelli di `BarcodeReaderTest`.
 
-#lettura barcode (dalla 1.0.4)
+## Lettura barcode
 
-	- Un solo lettore: `sorter_barcode.dll` (libreria di sorter-barcode, release pubblica
-	  lib_sorter_barcode_windows, copiata in `lib/sorter-barcode/` con LEGGIMI e sha256), chiamata con la
-	  Foreign Function API da `core/SorterBarcode`. Scandit/WSL e ZXing tolti su richiesta dell'utente
-	  (2026-11-13): niente lettore di riserva. Senza dll l'elaborazione si ferma con un errore fatale.
-	  Misure in README, "Lettura barcode".
-	- La dll e' a 64 bit, va accanto al jar (`build-msi.ps1` la copia in `jpackage-input`) e la JVM gira con
-	  `--enable-native-access=ALL-UNNAMED` (java-options di jpackage, argLine di surefire).
-	- La dll apre i file con `fopen` (codepage ANSI) e per un PDF senza immagini che sa aprire risponde -2:
-	  in entrambi i casi `BarcodeReader.read` renderizza le pagine con PDFBox e le passa a `sb_read_gray`.
-	  Su un PDF che apre ma senza codice valido NON si renderizza: a 300 DPI legge meno che dal file.
-	- I PDF veri per le misure: `Desktop\bench-250gb` (66.918 PDF gia' rinominati, il barcode atteso e' nel
-	  nome). Il case-input e il case-output qui sopra non esistono piu' (verificato il 2026-11-12).
-	- Difetto noto, non del lettore: la ricerca come sottostringa (`INNER_CODES`) prende `OO6986475960` da
-	  `...OOOO698647596022` nel DataMatrix di Poste: 3 nomi sbagliati su 300 con la sola libreria.
+- **Un solo lettore: `sorter_barcode.dll`** (libreria di sorter-barcode, release pubblica lib_sorter_barcode_windows 1.2.1, copiata in
+  `lib\sorter-barcode\` con LEGGIMI e sha256), chiamata dentro il processo con **koffi** (`src/main/reader/native.ts`). Scandit/WSL e ZXing sono tolti
+  (2026-11-13): niente lettore di riserva. Senza dll l'elaborazione si ferma con un errore fatale. La dll viaggia come `extraResources`
+  (`<app>\resources\native`).
+- La dll apre i file con `fopen` (codepage ANSI): un percorso non ASCII passa da una copia temporanea con percorso ASCII (nella 1.x si renderizzava).
+  Per un PDF senza immagini che sa aprire risponde -2 (`ReadError`): allora `barcode.ts` **renderizza le pagine a 300 DPI con pdf.js + @napi-rs/canvas**
+  (era PDFBox) e le passa a `sb_read_gray`. **Su un PDF che apre ma senza codice valido NON si renderizza**: a 300 DPI legge meno che dal file.
+  Il fallback e' provato in `job.test.ts` con un ITF disegnato come vettori (generato nel test) — non con un PDF vero del sorter.
+- Si legge nei **worker thread** (`src/main/worker/reader.ts`, un'istanza della libreria per lavoratore, thread-safe), mai nel processo principale.
+  `RenameJob` (`core/job.ts`) parte da 1 lavoratore e ogni 250 ms +1 se la CPU e' sotto il 90%, -1 altrimenti (massimo il doppio dei processori).
+  **Il disco non si misura piu'** (con OSHI la prima misura poteva durare quasi un minuto).
+- Difetto noto, non del lettore: la ricerca come sottostringa (`INNER_CODES`) prende `OO6986475960` da `...OOOO698647596022` nel DataMatrix di Poste:
+  3 nomi sbagliati su 300 con la sola libreria. Conservato (c'e' un test che lo documenta): correggerlo cambia i nomi gia' dati ai lotti.
 
-#instruzioni
+## Dati e compatibilita' con la 1.x
 
-	- ~~su sorter-fx ci sono le instruzioni di come usare wsl per ricavare barcode, usa lo stesso metodo~~
-	  superata dalla 1.0.4: si legge solo con sorter_barcode, niente WSL (vedi "lettura barcode")
-	- su sorter-fx ci sta una gestione delle risorce del computer per controllo multi-thread, usa lo stesso metodo 
-	- su sorter-fx ci sta il log, inspirati su quello ma fai a modo tuo
+`%LOCALAPPDATA%\rinominaPDF\elaborazioni.json`, STESSO file e STESSI campi della 1.x (Jackson): `src/main/core/store.ts`. **Non rinominare i campi**
+(`iniziataIl`, `finitaIl`, `rinominati`, `nonLetti`, `errori`, `interrotta`…) o chi aggiorna perde la barra di sinistra. Un file rotto = storico vuoto;
+una voce rimasta «in corso» (programma morto a meta') si rilegge interrotta. I `LOG_*.txt` nella cartella di output hanno lo stesso formato.
 
-#la finestra (dalla 1.0.3)
+## La finestra
 
-	- Le cinque zone di STANDARD.md, su AtlantaFX PrimerDark fisso con l'accento verde del prodotto:
-	  `ui/Shell` (titolo, barra di sinistra, piede, flusher unico a 300 ms), `ui/Registro` (a destra),
-	  al centro `SetupPane`, `ProcessPane`, `RiepilogoPane`, `ImpostazioniPane`.
-	- `ui/AppSession` tiene job, storico e righe. Lo storico e' in `%LOCALAPPDATA%\rinominaPDF\elaborazioni.json`
-	  (`core/StoricoStore`): una voce rimasta "in corso" viene da un programma morto a meta' e si
-	  rilegge interrotta. La fine si registra sul thread del job, non su quello FX, che alla chiusura e' fermo.
-	- Un job alla volta (`RenameJob.threadStatus` e `Globals` sono statici): il form si compila ma non parte.
-	- La PRIMA `Pc.disk()` puo' durare quasi un minuto (55 s misurati): i sensori hanno un thread
-	  loro, separato da quello dello storico, e mai il thread FX.
-	- Scelte rispetto alla lista di controllo: niente licenza (strumento gratuito), niente i18n e
-	  niente selettore di tema (solo italiano, un tema). "Impostazioni" non ha regolazioni finte.
+Quella del kit (`AppFrame`) + `src/ui/App.tsx`: form, vista in corso con `Retro.tsx` (l'animazione arcade, su canvas, ~30 fps, solo a vista aperta),
+riepilogo, Registro nel pannello in basso (numeri, CPU, RAM, lavoratori; il filtro nasconde per categoria), Impostazioni → «Programma».
+Un job alla volta (`ElaborazioneService`). **Chiudere durante un'elaborazione la interrompe e aspetta (max 90 s) i file gia' presi**
+(`before-quit` in `app.ts`): un lavoratore ucciso a meta' di `copyFile` lascerebbe un PDF troncato col nome giusto. Niente licenza (strumento gratuito),
+niente i18n, un solo tema scelto dal kit. Niente MCP (`MCP_PORT: 0`, come watchCLI).
 
-#aggiornamento automatico
+## Aggiornamento automatico e pubblicazione
 
-	- `core/update` + `ui/UpdateDialog` sono copiati da listBigStorage (vedi STANDARD.md della linea,
-	  "Il controllo aggiornamenti dentro l'app"): controllo 5 s dopo l'avvio, poi ogni 6 ore, piu' il
-	  pulsante "Controlla aggiornamenti" nella barra di sinistra. Legge `AppInfo.HOME_URL` + `scarica/versione.json`.
-	- Pubblicazione su KVM2 (2026-10-30): `/var/www/scarica/rinominapdf/` con `rinominaPDF-1.0.1.msi`
-	  e `versione.json` (sha256 compreso). Stesso giorno la 1.0.2 (famiglie di barcode di SorterNext,
-	  vedi `Globals.BARCODE_FAMILIES`), manifest precedente in `versione.json.bak-1.0.1`. Vhost `/etc/nginx/sites-available/rinominapdf.teo.place` e record
-	  DNS su Cloudflare attivi: manifest e MSI rispondono in HTTPS, sha256 verificato dal download.
-	- Dal 2026-10-30 e' di nuovo nel wizard, **gratuito come SorterNext** (STANDARD.md, "Gli
-	  strumenti di lavoro gratuiti"): niente licenza, niente authenticator, niente Lemon Squeezy.
-	  Sito in `sito/` (copia di quello di SorterNext, cambia solo `src/prodotto.ts`, tema `foresta`,
-	  icona `public/icona.png` presa da `icon.ico`), pubblicato in `/var/www/html/rinominapdf/dist/`;
-	  vhost in `sito/rinominapdf.teo.place`. Bottone e scheda sulla home puntano a
-	  `teoSetup-rinominapdf-ultimo.exe`.
-	- La 1.0.3 (finestra a cinque zone) e' pubblicata dal 2026-11-06, manifest precedente in
-	  `versione.json.bak-1.0.2`, blocco `wizard` conservato.
-	- La 1.0.4 (solo sorter_barcode) e' pubblicata dal 2026-11-13: MSI e manifest in
-	  `/var/www/scarica/rinominapdf/` (manifest precedente in `versione.json.bak-1.0.3`, blocco `wizard`
-	  1.0.13 conservato), sito nuovo in `/var/www/html/rinominapdf/dist/` (il precedente in
-	  `dist.bak-1.0.3`). Prima: installata qui sopra la 1.0.0, una sola voce in App installate.
-	  Verificati da fuori manifest, download (sha256 uguale) e pagina.
-	- La 1.0.5 (dll sorter_barcode 1.2.1: DataMatrix deformati dalla scansione) e' pubblicata dal 2026-11-19: MSI e manifest in
-	  `/var/www/scarica/rinominapdf/` (manifest precedente in `versione.json.bak-1.0.4`, blocco `wizard` 1.0.13 conservato).
-	  `build-msi.ps1` non scrive `versione.json`: il manifest nuovo si scrive a mano partendo da quello del server.
-	- L'esito dell'aggiornamento precedente, e "hai gia' l'ultima versione", vanno nel registro.
-	- Chiudere l'app durante un'elaborazione la interrompe e aspetta (max 90 s) i file gia' presi:
-	  i worker sono daemon e uccisi a meta' di `Files.copy` lascerebbero un PDF troncato col nome giusto.
+Li fa il kit (controllo all'avvio e ogni sei ore, pulsante «Controlla aggiornamenti»; vedi `STANDARD.md`). Storia della pubblicazione sul server,
+fino alla 1.0.5 (2026-11-19): `/var/www/scarica/rinominapdf/` con gli MSI e `versione.json` (blocco `wizard` 1.0.13 conservato, manifest precedenti in
+`versione.json.bak-<versione>`), vhost `rinominapdf.teo.place`, sito in `sito/` (copia di quello di SorterNext, cambia solo `src/prodotto.ts`, tema
+`foresta`), pubblicato in `/var/www/html/rinominapdf/dist/`; nel wizard dal 2026-10-30, **gratuito come SorterNext**.
+La 2.0.0 NON e' pubblicata: `build-msi.ps1` scrive `dist\versione.json` senza il blocco `wizard`, che sul server si eredita da quello pubblicato.
+Il sito parla ancora di Java/JavaFX? Controllare `sito/src/prodotto.ts` prima di pubblicare.
+
+## Cose da sapere (2.x)
+
+- UpgradeCode `6E50594E-22A6-3AC3-A7FB-48CFCA119568` congelato in `main.js`, `electron-builder-config.js`, `build-msi.ps1` e nella tabella di `STANDARD.md`
+  (`tests/identity.test.ts` li confronta). Solo per macchina: non esiste un UpgradeCode per utente.
+- Prove senza toccare i dati veri: `LOCALAPPDATA` su una cartella di prova, `TEO_SCREENSHOT`/`TEO_EVAL`.
+- L'icona e' disegnata da `gen-icon.ps1` (foglio con barcode su gradiente verde): quella della 1.x (`icon.ico` in radice) arrivava solo a 48 px e
+  `electron-builder` ne pretende 256.
+- Non provato: installazione dell'MSI sopra la 1.0.5 e aggiornamento dall'app (serve una macchina con la 1.x installata e il server).

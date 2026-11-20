@@ -780,8 +780,8 @@ si usa `System.Logger` del JDK, senza aggiungere logback per due righe di diagno
 
 ## L'accesso per Claude (MCP)
 
-**Dal 2026-11-09 watchHost, listBigStorage, queryF5 e SorterBarcode si lasciano pilotare da
-Claude** (Claude Code, Claude Desktop) attraverso un server MCP dentro il programma installato.
+**Dal 2026-11-09 watchHost, listBigStorage, queryF5 e SorterBarcode (e dal 2026-11-19 TraceFox) si
+lasciano pilotare da Claude** (Claude Code, Claude Desktop) attraverso un server MCP dentro il programma installato.
 Non e' un programma a parte: e' il programma aperto, con la sua sessione, che risponde. Le
 regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutte.
 
@@ -790,6 +790,7 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
 | watchHost | HTTP, nello stesso server della dashboard | `http://127.0.0.1:8470/mcp` |
 | listBigStorage | HTTP | `http://127.0.0.1:8471/mcp` |
 | queryF5 | HTTP | `http://127.0.0.1:8472/mcp` |
+| TraceFox | HTTP | `http://127.0.0.1:8473/mcp` |
 | SorterBarcode | **stdio**: `SorterBarcode.exe --mcp` | — |
 
 - **HTTP per chi ha uno stato, stdio per chi non ce l'ha.** Un programma con una finestra aperta
@@ -820,7 +821,7 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   repository pubblico e non puo' portare il token: cosi' il token non finisce in `~/.claude.json`,
   e chi installa il plugin non deve sapere che il programma va aperto prima.
 - **Il plugin `teo-place`** (marketplace `TeoPlace/claude-plugins`, cartella `claude-plugins\`
-  qui accanto) dichiara i quattro server con il percorso in `Program Files` e porta una skill
+  qui accanto) dichiara i cinque server con il percorso in `Program Files` e porta una skill
   che dice a Claude cosa fare quando uno non risponde. Un prodotto nuovo con l'MCP vi aggiunge
   una riga in `.mcp.json` e una nella tabella della skill. In ogni programma, Impostazioni →
   «Accesso per Claude» ha il link a `<HOME_URL>claude` (`AppInfo.CLAUDE_URL`), la pagina del sito
@@ -840,7 +841,7 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
     server sarebbero due.
   - **nessun token** finisce in una configurazione: lo legge il ponte. Solo dal programma
     installato (`jpackage.app-path`): in sviluppo non c'e' un eseguibile da registrare.
-- **Porta fissa per prodotto**, la prossima libera e' **8473**. Porta occupata: lo si scrive nel
+- **Porta fissa per prodotto**, la prossima libera e' **8474**. Porta occupata: lo si scrive nel
   log e in Impostazioni, il programma non si ferma.
 - **Spento per default**, acceso solo da un gesto dell'utente in Impostazioni. Acceso a caldo
   apre la porta, spento la chiude (watchHost: risponde 404).
@@ -861,6 +862,12 @@ regole sono le stesse ovunque, e un prodotto nuovo che lo aggiunge le segue tutt
   `SLEEP`, `/*! */`…), `readOnly` propagato al server, transazione `READ ONLY` chiusa con
   `ROLLBACK`, limiti di righe e di tempo. Servono tutti: una transazione READ ONLY da sola **non**
   ferma `INTO OUTFILE`, e un utente `root` ha il privilegio FILE.
+- **I corpi non sono segreti per un proxy, le intestazioni si'** (TraceFox): un proxy di debug vede
+  password e token di chiunque ci passi, e il suo mestiere e' mostrare il corpo. Per questo i tool
+  omettono (`[omesso]`) le intestazioni di credenziali (`Authorization`, `Cookie`, `Set-Cookie`, chiavi API,
+  tutto cio' il cui nome dice token/secret/password) e i parametri dell'indirizzo con quei nomi, anche nel
+  curl e nelle regole di riscrittura; i corpi escono cosi' come registrati, e la scheda Impostazioni e la
+  descrizione dei tool lo dicono chiaro. L'utente deve saperlo prima di accendere l'accesso.
 - **Si vede cosa ha fatto Claude**: ogni chiamata finisce nel registro a schermo (categoria
   "Claude") o, dove il registro non c'e', in un file nella cartella di controllo e in una lista
   nelle Impostazioni. Un programma che cambia stato senza che si capisca chi e' stato si legge
