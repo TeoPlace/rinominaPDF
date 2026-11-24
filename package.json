@@ -1,7 +1,7 @@
 {
   "name": "rinominapdf",
   "productName": "rinominaPDF",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "description": "Rinomina i PDF di una cartella leggendone il barcode",
   "author": "teo.place",
